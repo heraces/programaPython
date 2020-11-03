@@ -1,15 +1,24 @@
 from PyQt5.QtCore import QAbstractTableModel, Qt
+from PyQt5 import QtGui
 
 class TableModel(QAbstractTableModel):
-    def __init__(self, data):
+    def __init__(self, data, colors):
         super().__init__()
         self._data = data
+        self.colorList = colors
         
     def data(self, index, role):
+        if role == Qt.BackgroundRole:            
+            if len(self.colorList) >= index.row() and self.colorList[index.row()]:    
+                return QtGui.QColor(70, 240, 40, 200)
+            else:
+                return QtGui.QColor(230, 40, 20, 100)
+
         if role == Qt.DisplayRole:
             # Get the raw value
             value = self._data.iloc[index.row(), index.column()]
             return str(value)
+            
 
 
     def rowCount(self, index):
@@ -27,5 +36,5 @@ class TableModel(QAbstractTableModel):
                 return str(self._data.columns[section])
             if orientation == Qt.Vertical:
                 return str(self._data.index[section])
-                
+
         

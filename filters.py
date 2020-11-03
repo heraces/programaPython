@@ -90,11 +90,12 @@ class Filters(QMainWindow):
             self.datos.append(maRalla)
 
         self.currentDatos = self.datos
+        self.listadeEmpates = []
         self.headers = ["Date", "Time", "Home team", "Away team", "PGHG", "PGAG", "PHG", "PAG", "Resultado"]
-        self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
         self.getActualEmpates()
+        self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
         self.partidos.setText(str(len(self.currentDatos))+ "Partidos")
-        self.model = TableModel(self.data)
+        self.model = TableModel(self.data, self.listadeEmpates)
         self.table.setModel(self.model)
 
 
@@ -198,6 +199,7 @@ class Filters(QMainWindow):
 
     def getActualEmpates(self): 
         self.empatesNum = 0
+        self.listadeEmpates = []
         for currentDatos in self.currentDatos:
             if currentDatos[-1] != "N/D":
                 string1 = ""
@@ -209,8 +211,14 @@ class Filters(QMainWindow):
 
                 if indice < len(resultado) and string1[:-1] == resultado[indice+2:]:
                     self.empatesNum +=1
+                    self.listadeEmpates.append(True)
+                else:
+                    self.listadeEmpates.append(False)
+            
+            else:
+                self.listadeEmpates.append(False)
 
-        self.empates.setText(str(self.empatesNum) + "Empates")
+        self.empates.setText(str(self.empatesNum) + " Empates")
         self.ptajeEmpates.setText(str(round(self.empatesNum/len(self.currentDatos) * 100, 2)) + "% de Empates")
 
     def aplicarResultado(self):
@@ -234,15 +242,15 @@ class Filters(QMainWindow):
                 self.currentDatos.append(elemento)
             
         self.getActualEmpates()
-        self.partidos.setText(str(len(self.currentDatos)) + "Partidos")
+        self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
         self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
-        self.model = TableModel(self.data)
+        self.model = TableModel(self.data, self.listadeEmpates)
         self.table.setModel(self.model)
 
     def sortTable(self, sortingColumn):
         self.burbuja(sortingColumn)
         self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
-        self.model = TableModel(self.data)
+        self.model = TableModel(self.data, self.listadeEmpates)
         self.table.setModel(self.model)
 
 
