@@ -1,13 +1,14 @@
 import pandas as pd
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtCore import QSize, Qt, QThreadPool
 from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton,
                              QMainWindow, QSlider, QWidget, QTableView,
-                             QVBoxLayout, QCheckBox, QHBoxLayout,
+                             QVBoxLayout, QCheckBox, QHBoxLayout, QProgressBar,
                              QDoubleSpinBox, QTabWidget, QGridLayout)
 
 from tableModel import TableModel
 from saveLocalDatabaseFile import SaveDosPuntosTheClass
 from externDatabase import Database
+from threaded import Orderer, OrdererSignals
 
 
 class Filters(QMainWindow):
@@ -19,28 +20,31 @@ class Filters(QMainWindow):
         #widgets layout1
         self.filtros = QLabel("Filtros")
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
-        self.pghd = QLabel("PGHD:  0.0%")
-        self.pgad = QLabel("PGAD:  0.0%")
-        self.phd = QLabel("PHD:   0.0%")
-        self.pad = QLabel("PAD:   0.0%")
+        self.pghd = QLabel("PGHD:  0%")
+        self.pgad = QLabel("PGAD:  0%")
+        self.phd = QLabel("PHD:   0%")
+        self.pad = QLabel("PAD:   0%")
         self.ptajeBarPGHD = QSlider(Qt.Horizontal)
         self.ptajeBarPGAD = QSlider(Qt.Horizontal)
         self.ptajeBarPHD = QSlider(Qt.Horizontal)
         self.ptajeBarPAD = QSlider(Qt.Horizontal)
+        self.progressBar = QProgressBar()
+        self.progressBar.hide()
         self.aplicar = QPushButton("Aplicar")
+        self.progressBar.setFixedWidth(100)
 
 
-        self.ptajeBarPGHD.setRange(0, 1000)
-        self.ptajeBarPGHD.setSingleStep(1)
+        self.ptajeBarPGHD.setRange(0, 100)
+        self.ptajeBarPGHD.setSingleStep(.1)
         
-        self.ptajeBarPGAD.setRange(0, 1000)
-        self.ptajeBarPGAD.setSingleStep(1)
+        self.ptajeBarPGAD.setRange(0, 100)
+        self.ptajeBarPGAD.setSingleStep(.1)
         
-        self.ptajeBarPHD.setRange(0, 1000)
-        self.ptajeBarPHD.setSingleStep(1)
+        self.ptajeBarPHD.setRange(0, 100)
+        self.ptajeBarPHD.setSingleStep(.1)
 
-        self.ptajeBarPAD.setRange(0, 1000)
-        self.ptajeBarPAD.setSingleStep(1)
+        self.ptajeBarPAD.setRange(0, 100)
+        self.ptajeBarPAD.setSingleStep(.1)
 
         #widgets layout2
         self.resultados = QLabel("Resultados")
@@ -91,13 +95,16 @@ class Filters(QMainWindow):
 
         self.currentDatos = self.datos
         self.listadeEmpates = []
-        self.headers = ["Date", "Time", "Home team", "Away team", "PGHG", "PGAG", "PHG", "PAG", "Resultado"]
+        self.headers = ["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD", "Resultado"]
         self.getActualEmpates()
         self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
         self.partidos.setText(str(len(self.currentDatos))+ "Partidos")
         self.model = TableModel(self.data, self.listadeEmpates)
         self.table.setModel(self.model)
 
+
+        #threads
+        self.threadpool = QThreadPool()
 
         #creates layout
         layout = QVBoxLayout()
@@ -113,6 +120,7 @@ class Filters(QMainWindow):
         topLayout.addWidget(self.ptajeBarPGAD, 1, 3, 1, 1)
         topLayout.addWidget(self.ptajeBarPHD, 2, 1, 1, 1)
         topLayout.addWidget(self.ptajeBarPAD, 2, 3, 1, 1)
+        topLayout.addWidget(self.progressBar, 1, 4, 1, 1)
         topLayout.addWidget(self.aplicar, 2, 4, 1, 1)
   
         midLayout.addWidget(self.resultados, 0, 0, 1, 1)
@@ -130,16 +138,16 @@ class Filters(QMainWindow):
 
 
     def actualizarPGHD(self):
-        self.pghd.setText("PGHD:  {}%".format(self.ptajeBarPGHD.value()/10))
+        self.pghd.setText("PGHD:  {}%".format(self.ptajeBarPGHD.value()))
     
     def actualizarPGAD(self):
-        self.pgad.setText("PGAD:  {}%".format(self.ptajeBarPGAD.value()/10))
+        self.pgad.setText("PGAD:  {}%".format(self.ptajeBarPGAD.value()))
 
     def actualizarPHD(self):
-        self.phd.setText("PHD:   {}%".format(self.ptajeBarPHD.value()/10))
+        self.phd.setText("PHD:   {}%".format(self.ptajeBarPHD.value()))
 
     def actualizarPAD(self):
-        self.pad.setText("PAD:   {}%".format(self.ptajeBarPAD.value()/10))
+        self.pad.setText("PAD:   {}%".format(self.ptajeBarPAD.value()))
 
     def findName(self, targetID):
         primero = 0
@@ -200,10 +208,10 @@ class Filters(QMainWindow):
     def getActualEmpates(self): 
         self.empatesNum = 0
         self.listadeEmpates = []
-        for currentDatos in self.currentDatos:
-            if currentDatos[-1] != "N/D":
+        for currentDato in self.currentDatos:
+            if currentDato[-1] != "N/D":
                 string1 = ""
-                resultado = currentDatos[-1]
+                resultado = currentDato[-1]
                 indice = 0
                 while indice < len(resultado) and resultado[indice] != "-":
                     string1 = string1 + resultado[indice]
@@ -219,28 +227,37 @@ class Filters(QMainWindow):
                 self.listadeEmpates.append(False)
 
         self.empates.setText(str(self.empatesNum) + " Empates")
-        self.ptajeEmpates.setText(str(round(self.empatesNum/len(self.currentDatos) * 100, 2)) + "% de Empates")
+        if(len(self.currentDatos) != 0):
+            self.ptajeEmpates.setText(str(round(self.empatesNum/len(self.currentDatos) * 100, 2)) + "% de Empates")
 
     def aplicarResultado(self):
         self.currentDatos = []
         isIn = True
+        self.progressBar.setValue(0)
+        self.progressBar.show()
+        contador = 0
         for elemento in self.datos:
+            contador+= 100
             isIn = True
-            if not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[4], float) and elemento[4] >= self.ptajeBarPGHD.value()/10)):
+            if not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[4], float) and elemento[4] >= self.ptajeBarPGHD.value())):
                 isIn = False
 
-            elif not(self.ptajeBarPGAD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGAD.value()/10)):
+            if isIn and not(self.ptajeBarPGAD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGAD.value())):
                  isIn = False
 
-            elif not(self.ptajeBarPHD.value() <= 0 or (isinstance(elemento[6], float) and elemento[6] >= self.ptajeBarPHD.value()/10)):
+            if isIn and not(self.ptajeBarPHD.value() <= 0 or (isinstance(elemento[6], float) and elemento[6] >= self.ptajeBarPHD.value())):
                  isIn = False
 
-            elif not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] <= self.ptajeBarPAD.value()/10)):
+            if isIn and not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPAD.value())):
                  isIn = False
             
             if  isIn:
                 self.currentDatos.append(elemento)
             
+            if(contador%1500 == 0):
+                self.progressBar.setValue(contador/len(self.datos))
+            
+        self.progressBar.hide()
         self.getActualEmpates()
         self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
         self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
@@ -248,25 +265,21 @@ class Filters(QMainWindow):
         self.table.setModel(self.model)
 
     def sortTable(self, sortingColumn):
-        self.burbuja(sortingColumn)
+        self.progressBar.setValue(0)
+        self.progressBar.show()
+        worker = Orderer(self.currentDatos, sortingColumn)
+        worker.signals.progress.connect(self.update_progress)
+        worker.signals.finished.connect(self.endBar)
+        self.threadpool.start(worker)
+
+    def update_progress(self, progress):
+        self.progressBar.setValue(progress)
+
+    def endBar(self):
+        self.progressBar.hide()
+        self.getActualEmpates()
         self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
         self.model = TableModel(self.data, self.listadeEmpates)
         self.table.setModel(self.model)
+        self.getActualEmpates()
 
-
-    
-    def burbuja(self, sortingColumn):
-        for indice in range(len(self.currentDatos)):
-            for sorting in range(len(self.currentDatos)):
-                if sortingColumn <= 7 and sortingColumn >= 4:  
-                    if (isinstance(self.currentDatos[sorting][sortingColumn], float) and (isinstance(self.currentDatos[indice][sortingColumn], str)
-                            or self.currentDatos[sorting][sortingColumn] > self.currentDatos[indice][sortingColumn])):
-                        line = self.currentDatos[indice]
-                        self.currentDatos[indice] = self.currentDatos[sorting]
-                        self.currentDatos[sorting] = line
-
-                else:
-                    if str(self.currentDatos[sorting][sortingColumn]) > str(self.currentDatos[indice][sortingColumn]):
-                        line = self.currentDatos[indice]
-                        self.currentDatos[indice] = self.currentDatos[sorting]
-                        self.currentDatos[sorting] = line
