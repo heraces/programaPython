@@ -22,8 +22,8 @@ class Filters(QMainWindow):
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.pghd = QLabel("PGHD:  0%")
         self.pgad = QLabel("PGAD:  0%")
-        self.phd = QLabel("PHD:   0%")
-        self.pad = QLabel("PAD:   0%")
+        self.phd = QLabel("PHD:    0%")
+        self.pad = QLabel("PAD:    0%")
         self.ptajeBarPGHD = QSlider(Qt.Horizontal)
         self.ptajeBarPGAD = QSlider(Qt.Horizontal)
         self.ptajeBarPHD = QSlider(Qt.Horizontal)
@@ -32,19 +32,28 @@ class Filters(QMainWindow):
         self.progressBar.hide()
         self.aplicar = QPushButton("Aplicar")
         self.progressBar.setFixedWidth(100)
+        self.ppghome = QLabel("PPGHome:   0%")
+        self.ptajeBarPPGHome = QSlider(Qt.Horizontal)
+        self.ppgaway = QLabel("PPGAway:   0%")
+        self.ptajeBarPPGAway = QSlider(Qt.Horizontal)
+        self.tgpg = QLabel("TGPG:   0%")
+        self.ptajeBarTGPG = QSlider(Qt.Horizontal)
 
 
         self.ptajeBarPGHD.setRange(0, 100)
         self.ptajeBarPGHD.setSingleStep(.1)
-        
         self.ptajeBarPGAD.setRange(0, 100)
         self.ptajeBarPGAD.setSingleStep(.1)
-        
         self.ptajeBarPHD.setRange(0, 100)
         self.ptajeBarPHD.setSingleStep(.1)
-
         self.ptajeBarPAD.setRange(0, 100)
         self.ptajeBarPAD.setSingleStep(.1)
+        self.ptajeBarPPGHome.setRange(0, 100)
+        self.ptajeBarPPGHome.setSingleStep(.1)
+        self.ptajeBarPPGAway.setRange(0, 100)
+        self.ptajeBarPPGAway.setSingleStep(.1)
+        self.ptajeBarTGPG.setRange(0, 100)
+        self.ptajeBarTGPG.setSingleStep(.1)
 
         #widgets layout2
         self.resultados = QLabel("Resultados")
@@ -64,6 +73,7 @@ class Filters(QMainWindow):
         self.ptajeBarPGAD.valueChanged.connect(self.actualizarPGAD)
         self.ptajeBarPHD.valueChanged.connect(self.actualizarPHD)
         self.ptajeBarPAD.valueChanged.connect(self.actualizarPAD)
+        self.ptajeBarTGPG.valueChanged.connect(self.actualizarTGPG)
         self.aplicar.clicked.connect(self.aplicarResultado)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
         
@@ -90,12 +100,15 @@ class Filters(QMainWindow):
             maRalla.append(self.getTheHomePercentage(row))
             maRalla.append(self.getTheAwayPercentage(row))
             maRalla.append(self.getResultado(row))
+            maRalla.append(self.getTotalGoalsInGame(row))
+            maRalla.append(self.getPPGHome(row))
+            maRalla.append(self.getPPGAway(row))
 
             self.datos.append(maRalla)
 
         self.currentDatos = self.datos
         self.listadeEmpates = []
-        self.headers = ["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD", "Resultado"]
+        self.headers = ["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD", "Resultado", "TGPG", "PPGHome", "PPGAway"]
         self.getActualEmpates()
         self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
         self.partidos.setText(str(len(self.currentDatos))+ "Partidos")
@@ -122,6 +135,12 @@ class Filters(QMainWindow):
         topLayout.addWidget(self.ptajeBarPAD, 2, 3, 1, 1)
         topLayout.addWidget(self.progressBar, 1, 4, 1, 1)
         topLayout.addWidget(self.aplicar, 2, 4, 1, 1)
+        topLayout.addWidget(self.tgpg, 3, 0, 1, 1)
+        topLayout.addWidget(self.ptajeBarTGPG, 3, 1, 1, 1)
+        topLayout.addWidget(self.ppghome, 4, 0, 1, 1)
+        topLayout.addWidget(self.ptajeBarPPGHome, 4, 1, 1, 1)
+        topLayout.addWidget(self.ppgaway, 5, 2, 1, 1)
+        topLayout.addWidget(self.ptajeBarPPGAway, 5, 3, 1, 1)
   
         midLayout.addWidget(self.resultados, 0, 0, 1, 1)
         midLayout.addWidget(self.ptajeEmpates, 1, 0, 1, 1)
@@ -148,6 +167,10 @@ class Filters(QMainWindow):
 
     def actualizarPAD(self):
         self.pad.setText("PAD:   {}%".format(self.ptajeBarPAD.value()))
+
+    def actualizarTGPG(self):
+        self.tgpg.setText("TGPG:   {}".format(self.ptajeBarPAD.value()))
+
 
     def findName(self, targetID):
         primero = 0
@@ -181,7 +204,6 @@ class Filters(QMainWindow):
 
         return "N/D"
 
-
     def getTheGlobalAwayPercentage(self, row):
         if row["AW"] + row["AD"]+ row["AL"] != 0:
             return round(row["AD"] / (row["AW"] + row["AD"]+ row["AL"]) * 100, 3)
@@ -200,6 +222,29 @@ class Filters(QMainWindow):
 
         return "N/D"
 
+    def getTotalGoalsInGame(self, row):
+        if(row["FTHG"] != -1 and row["FTAG"] != -1):
+            a = 0
+            b = 0
+            if row["HW"] + row["HD"]+ row["HL"] != 0:
+                a = (row["GOALSGH"] + row["GOALCGH"]) / (row["HW"] + row["HD"]+ row["HL"])
+            if row["AW"] + row["AD"]+ row["AL"] != 0:
+                b = (row["GOALSGH"] + row["GOALCGH"]) / (row["AW"] + row["AD"]+ row["AL"])
+            
+            return round(((a+b)/2), 3)
+
+        return "N/D"
+
+    def getPPGHome(self, row):
+        if row["HW"] + row["HD"]+ row["HL"] != 0:
+            return round((3*row["HW"] + row["HD"])/(row["HW"] + row["HD"]+ row["HL"]), 3)
+        return "N/D"
+
+    def getPPGAway(self, row):
+        if row["AW"] + row["AD"]+ row["AL"] != 0:
+            return round((3*row["AW"] + row["AD"])/(row["AW"] + row["AD"]+ row["AL"]), 3)
+        return "N/D"
+
     def getResultado(self, row):
         if row["FTHG"] < 0:
             return "N/D"
@@ -209,9 +254,9 @@ class Filters(QMainWindow):
         self.empatesNum = 0
         self.listadeEmpates = []
         for currentDato in self.currentDatos:
-            if currentDato[-1] != "N/D":
+            if currentDato[8] != "N/D":
                 string1 = ""
-                resultado = currentDato[-1]
+                resultado = currentDato[8]
                 indice = 0
                 while indice < len(resultado) and resultado[indice] != "-":
                     string1 = string1 + resultado[indice]
@@ -249,6 +294,15 @@ class Filters(QMainWindow):
                  isIn = False
 
             if isIn and not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPAD.value())):
+                 isIn = False
+
+            if isIn and not(self.ptajeBarTGPG.value() <= 0 or (isinstance(elemento[8], float) and elemento[8] >= self.ptajeBarTGPG.value())):
+                 isIn = False
+
+            if isIn and not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarPPGHome.value())):
+                 isIn = False
+
+            if isIn and not(self.ptajeBarPPGAway.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGAway.value())):
                  isIn = False
             
             if  isIn:
