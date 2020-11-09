@@ -18,14 +18,13 @@ class Orderer(QRunnable):
         for indice in range(len(self.datos)-1, 0, -1):
             for sorting in range(indice):
                 if self.sortingColumn >= 4 and self.sortingColumn != 8:  
-                    if (isinstance(self.datos[sorting][self.sortingColumn], float) and (isinstance(self.datos[indice][self.sortingColumn], str)
-                            or self.datos[sorting][self.sortingColumn] > self.datos[indice][self.sortingColumn])):
+                    if (isinstance(self.datos[sorting][self.sortingColumn], float) and (isinstance(self.datos[indice][self.sortingColumn], str))
+                            or self.datos[sorting][self.sortingColumn] > self.datos[indice][self.sortingColumn]):
                         line = self.datos[indice]
                         self.datos[indice] = self.datos[sorting]
                         self.datos[sorting] = line
 
-                else:
-                    if str(self.datos[sorting][self.sortingColumn]) > str(self.datos[indice][self.sortingColumn]):
+                elif str(self.datos[sorting][self.sortingColumn]) > str(self.datos[indice][self.sortingColumn]):
                         line = self.datos[indice]
                         self.datos[indice] = self.datos[sorting]
                         self.datos[sorting] = line

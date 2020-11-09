@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         widget.addTab(globalWidgets, "Backtesting")
         widget.addTab(plotlWidgets, "Plots")
         
-        self.setMinimumSize(QSize(850, 600))
+        self.setMinimumSize(QSize(1200, 700))
         self.setCentralWidget(widget)
 
 app = QApplication(sys.argv)

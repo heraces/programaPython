@@ -1,7 +1,7 @@
 import pandas as pd
 from PyQt5.QtCore import QSize, Qt, QThreadPool
 from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton,
-                             QMainWindow, QSlider, QWidget, QTableView,
+                             QMainWindow, QSlider, QWidget, QTableView, 
                              QVBoxLayout, QCheckBox, QHBoxLayout, QProgressBar,
                              QDoubleSpinBox, QTabWidget, QGridLayout)
 
@@ -24,21 +24,28 @@ class Filters(QMainWindow):
         self.pgad = QLabel("PGAD:  0%")
         self.phd = QLabel("PHD:    0%")
         self.pad = QLabel("PAD:    0%")
+        self.aplicar = QPushButton("Aplicar")
+        self.ppghome = QLabel("PPGHome:   0")
+        self.ppgaway = QLabel("PPGAway:   0")
+        self.tgpg = QLabel("TGPG:    0")
+        self.pjhome = QLabel("PJHome:   0")
+        self.pjaway = QLabel("PJAway:    0")
+        self.rempate = QLabel("REmpate:  0")
+
         self.ptajeBarPGHD = QSlider(Qt.Horizontal)
         self.ptajeBarPGAD = QSlider(Qt.Horizontal)
         self.ptajeBarPHD = QSlider(Qt.Horizontal)
         self.ptajeBarPAD = QSlider(Qt.Horizontal)
+        self.ptajeBarPPGHome = QSlider(Qt.Horizontal)
+        self.ptajeBarPPGAway = QSlider(Qt.Horizontal)
+        self.ptajeBarTGPG = QSlider(Qt.Horizontal)
+        self.ptajeBarPJHome = QSlider(Qt.Horizontal)
+        self.ptajeBarPJAway = QSlider(Qt.Horizontal)
+        self.ptajeBarRempate = QSlider(Qt.Horizontal)
+
         self.progressBar = QProgressBar()
         self.progressBar.hide()
-        self.aplicar = QPushButton("Aplicar")
         self.progressBar.setFixedWidth(100)
-        self.ppghome = QLabel("PPGHome:   0%")
-        self.ptajeBarPPGHome = QSlider(Qt.Horizontal)
-        self.ppgaway = QLabel("PPGAway:   0%")
-        self.ptajeBarPPGAway = QSlider(Qt.Horizontal)
-        self.tgpg = QLabel("TGPG:   0%")
-        self.ptajeBarTGPG = QSlider(Qt.Horizontal)
-
 
         self.ptajeBarPGHD.setRange(0, 100)
         self.ptajeBarPGHD.setSingleStep(.1)
@@ -48,12 +55,18 @@ class Filters(QMainWindow):
         self.ptajeBarPHD.setSingleStep(.1)
         self.ptajeBarPAD.setRange(0, 100)
         self.ptajeBarPAD.setSingleStep(.1)
-        self.ptajeBarPPGHome.setRange(0, 100)
-        self.ptajeBarPPGHome.setSingleStep(.1)
-        self.ptajeBarPPGAway.setRange(0, 100)
-        self.ptajeBarPPGAway.setSingleStep(.1)
-        self.ptajeBarTGPG.setRange(0, 100)
-        self.ptajeBarTGPG.setSingleStep(.1)
+        self.ptajeBarPPGHome.setRange(0, 10)
+        self.ptajeBarPPGHome.setSingleStep(5)
+        self.ptajeBarPPGAway.setRange(0, 10)
+        self.ptajeBarPPGAway.setSingleStep(5)
+        self.ptajeBarTGPG.setRange(0, 10)
+        self.ptajeBarTGPG.setSingleStep(5)
+        self.ptajeBarPJAway.setRange(0, 50)
+        self.ptajeBarPJAway.setSingleStep(1)
+        self.ptajeBarPJHome.setRange(0, 50)
+        self.ptajeBarPJHome.setSingleStep(1)
+        self.ptajeBarRempate.setRange(0, 10)
+        self.ptajeBarRempate.setSingleStep(1)
 
         #widgets layout2
         self.resultados = QLabel("Resultados")
@@ -74,6 +87,11 @@ class Filters(QMainWindow):
         self.ptajeBarPHD.valueChanged.connect(self.actualizarPHD)
         self.ptajeBarPAD.valueChanged.connect(self.actualizarPAD)
         self.ptajeBarTGPG.valueChanged.connect(self.actualizarTGPG)
+        self.ptajeBarPPGAway.valueChanged.connect(self.actualizarPPGAway)
+        self.ptajeBarPPGHome.valueChanged.connect(self.actualizarPPGHome)
+        self.ptajeBarPJAway.valueChanged.connect(self.actualizarPJAway)
+        self.ptajeBarPJHome.valueChanged.connect(self.actualizarPJHome)
+        self.ptajeBarRempate.valueChanged.connect(self.actualizarRempate)
         self.aplicar.clicked.connect(self.aplicarResultado)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
         
@@ -103,12 +121,16 @@ class Filters(QMainWindow):
             maRalla.append(self.getTotalGoalsInGame(row))
             maRalla.append(self.getPPGHome(row))
             maRalla.append(self.getPPGAway(row))
+            maRalla.append(self.getPJHome(row))
+            maRalla.append(self.getPJAway(row))
+            maRalla.append(self.getRempate(row))
 
             self.datos.append(maRalla)
 
         self.currentDatos = self.datos
         self.listadeEmpates = []
-        self.headers = ["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD", "Resultado", "TGPG", "PPGHome", "PPGAway"]
+        self.headers = ["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
+             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate"]
         self.getActualEmpates()
         self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
         self.partidos.setText(str(len(self.currentDatos))+ "Partidos")
@@ -137,10 +159,16 @@ class Filters(QMainWindow):
         topLayout.addWidget(self.aplicar, 2, 4, 1, 1)
         topLayout.addWidget(self.tgpg, 3, 0, 1, 1)
         topLayout.addWidget(self.ptajeBarTGPG, 3, 1, 1, 1)
-        topLayout.addWidget(self.ppghome, 4, 0, 1, 1)
-        topLayout.addWidget(self.ptajeBarPPGHome, 4, 1, 1, 1)
-        topLayout.addWidget(self.ppgaway, 5, 2, 1, 1)
-        topLayout.addWidget(self.ptajeBarPPGAway, 5, 3, 1, 1)
+        topLayout.addWidget(self.ppghome, 3, 2, 1, 1)
+        topLayout.addWidget(self.ptajeBarPPGHome, 3, 3, 1, 1)
+        topLayout.addWidget(self.ppgaway, 4, 2, 1, 1)
+        topLayout.addWidget(self.ptajeBarPPGAway, 4, 3, 1, 1)
+        topLayout.addWidget(self.pjhome, 5, 0, 1, 1)
+        topLayout.addWidget(self.ptajeBarPJHome, 5, 1, 1, 1)
+        topLayout.addWidget(self.pjaway, 5, 2, 1, 1)
+        topLayout.addWidget(self.ptajeBarPJAway, 5, 3, 1, 1)
+        topLayout.addWidget(self.rempate, 6, 0, 1, 1)
+        topLayout.addWidget(self.ptajeBarRempate, 6, 1, 1, 1)
   
         midLayout.addWidget(self.resultados, 0, 0, 1, 1)
         midLayout.addWidget(self.ptajeEmpates, 1, 0, 1, 1)
@@ -169,7 +197,41 @@ class Filters(QMainWindow):
         self.pad.setText("PAD:   {}%".format(self.ptajeBarPAD.value()))
 
     def actualizarTGPG(self):
-        self.tgpg.setText("TGPG:   {}".format(self.ptajeBarPAD.value()))
+        if self.ptajeBarTGPG.value() >= 10:
+            self.tgpg.setText("TGPG:   {}+".format(self.ptajeBarTGPG.value()))
+        else :
+            self.tgpg.setText("TGPG:   {}".format(self.ptajeBarTGPG.value()))
+
+    def actualizarPPGHome(self):
+        if self.ptajeBarPPGHome.value() >= 10:
+            self.ppghome.setText("PPGHome:   {}+".format(self.ptajeBarPPGHome.value()))
+        else:
+            self.ppghome.setText("PPGHome:   {}".format(self.ptajeBarPPGHome.value()))
+    
+    def actualizarPPGAway(self):
+        if self.ptajeBarPPGAway.value() >= 10:
+            self.ppgaway.setText("PPGAway:   {}+".format(self.ptajeBarPPGAway.value()))
+        else:
+            self.ppgaway.setText("PPGAway:   {}".format(self.ptajeBarPPGAway.value()))
+
+        
+    def actualizarPJHome(self):
+        if self.ptajeBarPJHome.value() >= 50:
+            self.pjhome.setText("PJHome:   {}+".format(self.ptajeBarPJHome.value()))
+        else:
+            self.pjhome.setText("PJHome:   {}".format(self.ptajeBarPJHome.value()))
+    
+    def actualizarPJAway(self):
+        if self.ptajeBarPJAway.value() >= 50:
+            self.pjaway.setText("PJAway:   {}+".format(self.ptajeBarPJAway.value()))
+        else:
+            self.pjaway.setText("PJAway:   {}".format(self.ptajeBarPJAway.value()))
+
+    def actualizarRempate(self):
+        if self.ptajeBarRempate.value() >= 10:
+            self.rempate.setText("Rempate:   {}+".format(self.ptajeBarRempate.value()))
+        else:
+            self.rempate.setText("Rempate:   {}".format(self.ptajeBarRempate.value()))
 
 
     def findName(self, targetID):
@@ -223,7 +285,7 @@ class Filters(QMainWindow):
         return "N/D"
 
     def getTotalGoalsInGame(self, row):
-        if(row["FTHG"] != -1 and row["FTAG"] != -1):
+        if row["AW"] + row["AD"]+ row["AL"] != 0 or row["HW"] + row["HD"]+ row["HL"] != 0:
             a = 0
             b = 0
             if row["HW"] + row["HD"]+ row["HL"] != 0:
@@ -244,6 +306,15 @@ class Filters(QMainWindow):
         if row["AW"] + row["AD"]+ row["AL"] != 0:
             return round((3*row["AW"] + row["AD"])/(row["AW"] + row["AD"]+ row["AL"]), 3)
         return "N/D"
+
+    def getPJHome(self, row):
+        return row["HW"] + row["HD"]+ row["HL"]
+
+    def getPJAway(self, row):
+        return row["AW"] + row["AD"]+ row["AL"]
+
+    def getRempate(self, row):
+        return row["REH"] + row["REA"]+ row["REHH"] + row["REAA"]
 
     def getResultado(self, row):
         if row["FTHG"] < 0:
@@ -296,13 +367,19 @@ class Filters(QMainWindow):
             if isIn and not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPAD.value())):
                  isIn = False
 
-            if isIn and not(self.ptajeBarTGPG.value() <= 0 or (isinstance(elemento[8], float) and elemento[8] >= self.ptajeBarTGPG.value())):
+            if isIn and not(self.ptajeBarTGPG.value() <= 0 or (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.value())):
                  isIn = False
 
-            if isIn and not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarPPGHome.value())):
+            if isIn and not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
                  isIn = False
 
-            if isIn and not(self.ptajeBarPPGAway.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGAway.value())):
+            if isIn and not(self.ptajeBarPPGAway.value() <= 0 or (isinstance(elemento[11], float) and elemento[11] >= self.ptajeBarPPGAway.value())):
+                 isIn = False
+
+            if isIn and not(self.ptajeBarPJHome.value() <= 0 or elemento[12] >= self.ptajeBarPJHome.value()):
+                 isIn = False
+
+            if isIn and not(self.ptajeBarPJAway.value() <= 0 or elemento[13] >= self.ptajeBarPJAway.value()):
                  isIn = False
             
             if  isIn:
