@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 from PyQt5.QtCore import QSize, Qt, QThreadPool
 from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton,
                              QMainWindow, QSlider, QWidget, QTableView, 
@@ -6,7 +7,7 @@ from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton,
                              QDoubleSpinBox, QTabWidget, QGridLayout)
 
 from tableModel import TableModel
-from saveLocalDatabaseFile import SaveDosPuntosTheClass
+from localDatabase import SaveDialog
 from externDatabase import Database
 from threaded import Orderer, OrdererSignals
 
@@ -25,6 +26,7 @@ class Filters(QMainWindow):
         self.phd = QLabel("PHD:    0%")
         self.pad = QLabel("PAD:    0%")
         self.aplicar = QPushButton("Aplicar")
+        self.save = QPushButton("Save/Load")
         self.ppghome = QLabel("PPGHome:   0")
         self.ppgaway = QLabel("PPGAway:   0")
         self.tgpg = QLabel("TGPG:    0")
@@ -48,25 +50,15 @@ class Filters(QMainWindow):
         self.progressBar.setFixedWidth(100)
 
         self.ptajeBarPGHD.setRange(0, 100)
-        self.ptajeBarPGHD.setSingleStep(.1)
         self.ptajeBarPGAD.setRange(0, 100)
-        self.ptajeBarPGAD.setSingleStep(.1)
         self.ptajeBarPHD.setRange(0, 100)
-        self.ptajeBarPHD.setSingleStep(.1)
         self.ptajeBarPAD.setRange(0, 100)
-        self.ptajeBarPAD.setSingleStep(.1)
         self.ptajeBarPPGHome.setRange(0, 10)
-        self.ptajeBarPPGHome.setSingleStep(5)
         self.ptajeBarPPGAway.setRange(0, 10)
-        self.ptajeBarPPGAway.setSingleStep(5)
         self.ptajeBarTGPG.setRange(0, 10)
-        self.ptajeBarTGPG.setSingleStep(5)
         self.ptajeBarPJAway.setRange(0, 50)
-        self.ptajeBarPJAway.setSingleStep(1)
         self.ptajeBarPJHome.setRange(0, 50)
-        self.ptajeBarPJHome.setSingleStep(1)
         self.ptajeBarRempate.setRange(0, 10)
-        self.ptajeBarRempate.setSingleStep(1)
 
         #widgets layout2
         self.resultados = QLabel("Resultados")
@@ -93,6 +85,7 @@ class Filters(QMainWindow):
         self.ptajeBarPJHome.valueChanged.connect(self.actualizarPJHome)
         self.ptajeBarRempate.valueChanged.connect(self.actualizarRempate)
         self.aplicar.clicked.connect(self.aplicarResultado)
+        self.save.clicked.connect(self.guardarSetts)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
         
 
@@ -157,6 +150,7 @@ class Filters(QMainWindow):
         topLayout.addWidget(self.ptajeBarPAD, 2, 3, 1, 1)
         topLayout.addWidget(self.progressBar, 1, 4, 1, 1)
         topLayout.addWidget(self.aplicar, 2, 4, 1, 1)
+        topLayout.addWidget(self.save, 4, 4, 1, 1)
         topLayout.addWidget(self.tgpg, 3, 0, 1, 1)
         topLayout.addWidget(self.ptajeBarTGPG, 3, 1, 1, 1)
         topLayout.addWidget(self.ppghome, 3, 2, 1, 1)
@@ -380,6 +374,9 @@ class Filters(QMainWindow):
                  isIn = False
 
             if isIn and not(self.ptajeBarPJAway.value() <= 0 or elemento[13] >= self.ptajeBarPJAway.value()):
+                 isIn = False  
+            
+            if isIn and not(self.ptajeBarRempate.value() <= 0 or elemento[14] >= self.ptajeBarRempate.value()):
                  isIn = False
             
             if  isIn:
@@ -414,3 +411,7 @@ class Filters(QMainWindow):
         self.table.setModel(self.model)
         self.getActualEmpates()
 
+    def guardarSetts(self):
+        dlg = SaveDialog(self)
+        dlg.setWindowTitle("Save/Load profile")
+        dlg.exec_()
