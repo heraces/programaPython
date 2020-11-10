@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import (QDialog, QWidget, QLabel, QLineEdit, QListView, QPushButton, QProgressBar,
+from PyQt5.QtWidgets import (QDialog, QWidget, QLabel, QLineEdit, QListView, QPushButton, QProgressBar, QInputDialog,
             QCheckBox, QListWidget, QVBoxLayout, QMessageBox, QHBoxLayout, QGridLayout)
 from PyQt5.QtCore import QSize, Qt
-from settings import Settings
+
+import json
 
 #clase para guardar en la database local
 class SaveDialog(QDialog):
@@ -12,7 +13,6 @@ class SaveDialog(QDialog):
         self.maninWindow =  mainWindow
         self.setStyleSheet("QProgressBar "
                           "{"
-                          
                                 "height: 5px;"
                           "}")
 
@@ -99,42 +99,52 @@ class SaveDialog(QDialog):
 
         self.savedptajeBarPGHD = QProgressBar()
         self.savedptajeBarPGHD.setFixedWidth(150)
+        self.savedptajeBarPGHD.setTextVisible(False)
         self.savedptajeBarPGHD.setStyleSheet("QProgressBar::chunk {background-color: rgb(150,150,150);}")
         
         self.savedptajeBarPGAD = QProgressBar()
         self.savedptajeBarPGAD.setFixedWidth(150)
+        self.savedptajeBarPGAD.setTextVisible(False)
         self.savedptajeBarPGAD.setStyleSheet("QProgressBar::chunk {background-color: rgb(150,150,150);}")
 
         self.savedptajeBarPHD = QProgressBar()
         self.savedptajeBarPHD.setFixedWidth(150)
+        self.savedptajeBarPHD.setTextVisible(False)
         self.savedptajeBarPHD.setStyleSheet("QProgressBar::chunk {background-color: rgb(150,150,150);}")
 
         self.savedptajeBarPAD = QProgressBar()
         self.savedptajeBarPAD.setFixedWidth(150)
+        self.savedptajeBarPAD.setTextVisible(False)
         self.savedptajeBarPAD.setStyleSheet("QProgressBar::chunk {background-color: rgb(150,150,150);}")
         
         self.savedptajeBarPPGHome = QProgressBar()
         self.savedptajeBarPPGHome.setFixedWidth(150)
+        self.savedptajeBarPPGHome.setTextVisible(False)
         self.savedptajeBarPPGHome.setStyleSheet("QProgressBar::chunk {background-color: rgb(150,150,150);}")
 
         self.savedptajeBarPPGAway = QProgressBar()
         self.savedptajeBarPPGAway.setFixedWidth(150)
+        self.savedptajeBarPPGAway.setTextVisible(False)
         self.savedptajeBarPPGAway.setStyleSheet("QProgressBar::chunk {background-color: rgb(150,150,150);}")
 
         self.savedptajeBarTGPG = QProgressBar()
         self.savedptajeBarTGPG.setFixedWidth(150)
+        self.savedptajeBarTGPG.setTextVisible(False)
         self.savedptajeBarTGPG.setStyleSheet("QProgressBar::chunk {background-color: rgb(150,150,150);}")
 
         self.savedptajeBarPJHome = QProgressBar()
         self.savedptajeBarPJHome.setFixedWidth(150)
+        self.savedptajeBarPJHome.setTextVisible(False)
         self.savedptajeBarPJHome.setStyleSheet("QProgressBar::chunk {background-color: rgb(150,150,150);}")
 
         self.savedptajeBarPJAway = QProgressBar()
         self.savedptajeBarPJAway.setFixedWidth(150)
+        self.savedptajeBarPJAway.setTextVisible(False)
         self.savedptajeBarPJAway.setStyleSheet("QProgressBar::chunk {background-color: rgb(150,150,150);}")
 
         self.savedptajeBarRempate = QProgressBar()
         self.savedptajeBarRempate.setFixedWidth(150)
+        self.savedptajeBarRempate.setTextVisible(False)
         self.savedptajeBarRempate.setStyleSheet("QProgressBar::chunk {background-color: rgb(150,150,150);}")
         
 
@@ -146,23 +156,18 @@ class SaveDialog(QDialog):
         self.load = QPushButton("Load")
         self.add = QPushButton("Add")
         self.delete = QPushButton("Delete")
-        
-        
-        #otras cosas
-        """
-        self.currentProfile.setReadOnly(True)
-        self.listProfiles.addItems(self.settings.charge())
-        self.newName()
-        self.namer.returnPressed.connect(self.namerSend)
-        self.new.clicked.connect(self.newNameOpen)
-        self.delete.clicked.connect(self.deleteProfile)
-        self.listProfiles.currentItemChanged.connect(self.changeCurrentItem)
-        """
+
+        #conections
 
         #self.save.clicked.connect(self.saveData)
         #self.aply.clicked.connect(self.loadData)
+        self.delete.clicked.connect(self.deleteSelected)
+        self.add.clicked.connect(self.addProfile)
+        self.listProfiles.currentItemChanged.connect(self.setsavedBars)
 
 
+        #other things
+        self.actualizarLista()
         
         #layouts
         mainLayout = QVBoxLayout()
@@ -225,6 +230,7 @@ class SaveDialog(QDialog):
         settsLayout.addWidget(self.load)
         settsLayout.addStretch()
         settsLayout.addWidget(self.add)
+        settsLayout.addStretch()
         settsLayout.addWidget(self.delete)
 
         bottomLayout.addWidget(self.listProfiles)
@@ -236,6 +242,85 @@ class SaveDialog(QDialog):
 
         self.setLayout(mainLayout)
         self.setFixedSize(QSize(420, 500))
+
+    def deleteSelected(self):
+        try:
+            data ={}
+            with open('svdStngs.json', "r") as json_file:
+                data = json.load(json_file)               
+            
+            data.pop(self.listProfiles.currentItem().text())
+
+            with open('svdStngs.json', "w") as json_file:
+                json.dump(data, json_file)
+            
+            self.listProfiles.takeItem(self.listProfiles.row(self.listProfiles.currentItem()))
+            self.actualizarLista()
+
+        except KeyError:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("No Profile with that name")
+            msg.setWindowTitle("Delete profile error")
+            msg.exec_()
+
+
+    def addProfile(self):
+            text, ok = QInputDialog.getText(self, 'Add profile', "Name your new profile:")
+            if ok and text != "":
+                try:
+                    saveit = True
+                    data = {}
+                    with open('svdStngs.json', "r") as json_file:
+                        data = json.load(json_file)
+                        for d in data:
+                            if d == text:
+                                msg = QMessageBox()
+                                msg.setIcon(QMessageBox.Warning)
+                                msg.setText("There´s already a profile with this name")
+                                msg.setWindowTitle("Name already taken")
+                                msg.exec_()
+                                saveit = False
+                    
+                    if saveit:
+                        with open('svdStngs.json', "w") as json_file:
+                            data[text] = {"PGHD" : 0, "PGAD" : 0, "PHD" : 0, "PAD" : 0,"TGPG" : 0, 
+                                    "PPGHome" : 0, "PPGAway" : 0, "PJHome" : 0, "PJAway" : 0, "REmpate" : 0}
+                            json.dump(data, json_file)
+                        self.actualizarLista()
+                            
+                except KeyError:
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Warning)
+                    msg.setText("An error has occur")
+                    msg.setWindowTitle("Error")
+                    msg.exec_()
+
+    def setsavedBars(self):
+            with open('svdStngs.json', "r") as json_file:
+                data = json.load(json_file)     
+                aux = self.listProfiles.currentItem().text()    
+                print(aux)
+                self.savedptajeBarPGHD.setValue(data[aux]["PGHD"])
+                self.savedptajeBarPGAD.setValue(data[aux]["PGAD"])
+                self.savedptajeBarPHD.setValue(data[aux]["PHD"])
+                self.savedptajeBarPAD.setValue(data[aux]["PPGHome"] * self.savedptajeBarPPGHome.maximum() / self.maninWindow.ptajeBarPPGHome.maximum())
+                self.savedptajeBarPPGAway.setValue(data[aux]["PPGAway"] * self.savedptajeBarPPGAway.maximum() / self.maninWindow.ptajeBarPPGAway.maximum())
+                self.savedptajeBarTGPG.setValue(data[aux]["TGPG"] * self.savedptajeBarTGPG.maximum() / self.maninWindow.ptajeBarTGPG.maximum())
+                self.savedptajeBarPJHome.setValue(data[self.listProfiles.currentItem().text()]["PJHome"] * self.savedptajeBarPJHome.maximum() / self.maninWindow.ptajeBarPJHome.maximum())
+                self.savedptajeBarPJAway.setValue(data[self.listProfiles.currentItem().text()]["PJAway"] * self.savedptajeBarPJAway.maximum() / self.maninWindow.ptajeBarPJAway.maximum())
+                self.savedptajeBarRempate.setValue(data[self.listProfiles.currentItem().text()]["REmpate"] * self.savedptajeBarRempate.maximum() / self.maninWindow.ptajeBarRempate.maximum())         
+
+    def actualizarLista(self):    
+        with open('svdStngs.json', "r") as json_file:
+            try:
+                self.listProfiles.clear()
+                data = json.load(json_file)
+                for d in data:
+                    self.listProfiles.addItem(d)
+            except:
+                pass
+
 """
     def newName(self):
         self.giveNewName = QWidget()
@@ -244,7 +329,6 @@ class SaveDialog(QDialog):
         self.namer = QLineEdit(self.giveNewName)
         self.namer.setFixedSize(QSize(300, 50))
         self.namer.setMaxLength(19)
-
     def newNameOpen(self):
         self.giveNewName.show()
 
