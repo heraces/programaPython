@@ -1,10 +1,11 @@
 import pandas as pd
-import json
-from PyQt5.QtCore import QSize, Qt, QThreadPool
-from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton,
-                             QMainWindow, QSlider, QWidget, QTableView, 
-                             QVBoxLayout, QCheckBox, QHBoxLayout, QProgressBar,
-                             QDoubleSpinBox, QTabWidget, QGridLayout)
+from PyQt5.QtCore import QSize, Qt, QThreadPool, pyqtSlot, pyqtSignal
+
+from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton, QStyle, QMessageBox,
+                             QMainWindow, QSlider, QWidget, QTableView, QVBoxLayout, 
+                             QCheckBox, QHBoxLayout, QProgressBar, QGridLayout)
+
+from PyQt5.QtGui import QIcon
 
 from tableModel import TableModel
 from localDatabase import SaveDialog
@@ -13,26 +14,36 @@ from threaded import Orderer, OrdererSignals
 
 
 class Filters(QMainWindow):
+    filterValues = pyqtSignal([])
+
     def __init__(self):
         super().__init__()
         #creates widgets
         globalWidgets = QWidget()
         globalWidgets.setWindowTitle("Backtesting")
         #widgets layout1
+        
         self.filtros = QLabel("Filtros")
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.pghd = QLabel("PGHD:  0%")
         self.pgad = QLabel("PGAD:  0%")
         self.phd = QLabel("PHD:    0%")
         self.pad = QLabel("PAD:    0%")
-        self.aplicar = QPushButton("Aplicar")
-        self.save = QPushButton("Save/Load")
-        self.ppghome = QLabel("PPGHome:   0")
-        self.ppgaway = QLabel("PPGAway:   0")
-        self.tgpg = QLabel("TGPG:    0")
+        self.ppghome = QLabel("PPGHome:  0")
+        self.ppgaway = QLabel("PPGAway:  0")
+        self.tgpg = QLabel("TGPG:     0")
         self.pjhome = QLabel("PJHome:   0")
         self.pjaway = QLabel("PJAway:    0")
         self.rempate = QLabel("REmpate:  0")
+        self.odd1 = QLabel("ODD1:   0")
+        self.odd2 = QLabel("ODD2:    0")
+        self.odd_under25 = QLabel("ODD_UNDER25:  0")
+        
+        self.aplicar = QPushButton("Aplicar")
+        self.save = QPushButton("Save/Load profile")
+        self.save.setIcon(self.style().standardIcon(getattr(QStyle, "SP_DialogSaveButton")))
+        self.binding = QPushButton("Copy to predictions")
+        self.binding.setIcon(self.style().standardIcon(getattr(QStyle, "SP_CommandLink")))
 
         self.ptajeBarPGHD = QSlider(Qt.Horizontal)
         self.ptajeBarPGAD = QSlider(Qt.Horizontal)
@@ -44,6 +55,9 @@ class Filters(QMainWindow):
         self.ptajeBarPJHome = QSlider(Qt.Horizontal)
         self.ptajeBarPJAway = QSlider(Qt.Horizontal)
         self.ptajeBarRempate = QSlider(Qt.Horizontal)
+        self.ptajeBarODD1 = QSlider(Qt.Horizontal)
+        self.ptajeBarODD2 = QSlider(Qt.Horizontal)
+        self.ptajeBarUNDER25 = QSlider(Qt.Horizontal)
 
         self.progressBar = QProgressBar()
         self.progressBar.hide()
@@ -59,6 +73,9 @@ class Filters(QMainWindow):
         self.ptajeBarPJAway.setRange(0, 50)
         self.ptajeBarPJHome.setRange(0, 50)
         self.ptajeBarRempate.setRange(0, 10)
+        self.ptajeBarODD1.setRange(0, 10)
+        self.ptajeBarODD2.setRange(0, 10)
+        self.ptajeBarUNDER25.setRange(0, 10)
 
         #widgets layout2
         self.resultados = QLabel("Resultados")
@@ -68,6 +85,8 @@ class Filters(QMainWindow):
         self.partidos = QLabel("0 Partidos")
         self.empatesNum = 0
         
+        self.loadData = QPushButton("Load data")
+
         #Tabla
         self.table = QTableView()
         self.table.setSortingEnabled(True)
@@ -84,52 +103,22 @@ class Filters(QMainWindow):
         self.ptajeBarPJAway.valueChanged.connect(self.actualizarPJAway)
         self.ptajeBarPJHome.valueChanged.connect(self.actualizarPJHome)
         self.ptajeBarRempate.valueChanged.connect(self.actualizarRempate)
+        self.ptajeBarODD1.valueChanged.connect(self.actualizarODD1)
+        self.ptajeBarODD2.valueChanged.connect(self.actualizarODD2)
+        self.ptajeBarUNDER25.valueChanged.connect(self.actualizarUNDER25)
         self.aplicar.clicked.connect(self.aplicarResultado)
         self.save.clicked.connect(self.guardarSetts)
+        #self.binding.clicked.connect(self.conectarConNextTabla)
+        self.loadData.clicked.connect(self.loadDatabase)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
         
-
         #databases y tal
-        db = Database()
-
-        rows = db.query("SELECT * FROM FIXTURES")
-        self.teams = db.query("SELECT * FROM TEAMS ORDER BY ascii(ID) ASC")
         self.datos =[]
-
-        for row in rows:   
-            
-            row["ID_HOME"] = self.findName(row["ID_HOME"])
-            row["ID_AWAY"] = self.findName(row["ID_AWAY"])
-
-            maRalla = []
-            maRalla.append(self.getDate(row["DATE"]))
-            maRalla.append(self.getTime(row["TIME"]))
-            maRalla.append(row["ID_HOME"])
-            maRalla.append(row["ID_AWAY"])
-            maRalla.append(self.getTheGlobalHomePercentage(row))
-            maRalla.append(self.getTheGlobalAwayPercentage(row))
-            maRalla.append(self.getTheHomePercentage(row))
-            maRalla.append(self.getTheAwayPercentage(row))
-            maRalla.append(self.getResultado(row))
-            maRalla.append(self.getTotalGoalsInGame(row))
-            maRalla.append(self.getPPGHome(row))
-            maRalla.append(self.getPPGAway(row))
-            maRalla.append(self.getPJHome(row))
-            maRalla.append(self.getPJAway(row))
-            maRalla.append(self.getRempate(row))
-
-            self.datos.append(maRalla)
-
         self.currentDatos = self.datos
         self.listadeEmpates = []
+        self.db = Database()
         self.headers = ["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
-             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate"]
-        self.getActualEmpates()
-        self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
-        self.partidos.setText(str(len(self.currentDatos))+ "Partidos")
-        self.model = TableModel(self.data, self.listadeEmpates)
-        self.table.setModel(self.model)
-
+             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"]
 
         #threads
         self.threadpool = QThreadPool()
@@ -148,13 +137,13 @@ class Filters(QMainWindow):
         topLayout.addWidget(self.ptajeBarPGAD, 1, 3, 1, 1)
         topLayout.addWidget(self.ptajeBarPHD, 2, 1, 1, 1)
         topLayout.addWidget(self.ptajeBarPAD, 2, 3, 1, 1)
-        topLayout.addWidget(self.progressBar, 1, 4, 1, 1)
-        topLayout.addWidget(self.aplicar, 2, 4, 1, 1)
-        topLayout.addWidget(self.save, 4, 4, 1, 1)
+        topLayout.addWidget(self.aplicar, 4, 4, 1, 1)
+        topLayout.addWidget(self.save, 6, 4, 1, 1)
+        topLayout.addWidget(self.binding, 0, 4, 1, 1)
         topLayout.addWidget(self.tgpg, 3, 0, 1, 1)
         topLayout.addWidget(self.ptajeBarTGPG, 3, 1, 1, 1)
-        topLayout.addWidget(self.ppghome, 3, 2, 1, 1)
-        topLayout.addWidget(self.ptajeBarPPGHome, 3, 3, 1, 1)
+        topLayout.addWidget(self.ppghome, 4, 0, 1, 1)
+        topLayout.addWidget(self.ptajeBarPPGHome, 4, 1, 1, 1)
         topLayout.addWidget(self.ppgaway, 4, 2, 1, 1)
         topLayout.addWidget(self.ptajeBarPPGAway, 4, 3, 1, 1)
         topLayout.addWidget(self.pjhome, 5, 0, 1, 1)
@@ -163,6 +152,13 @@ class Filters(QMainWindow):
         topLayout.addWidget(self.ptajeBarPJAway, 5, 3, 1, 1)
         topLayout.addWidget(self.rempate, 6, 0, 1, 1)
         topLayout.addWidget(self.ptajeBarRempate, 6, 1, 1, 1)
+        topLayout.addWidget(self.odd1, 7, 0, 1, 1)
+        topLayout.addWidget(self.ptajeBarODD1, 7, 1, 1, 1)
+        topLayout.addWidget(self.odd2, 7, 2, 1, 1)
+        topLayout.addWidget(self.ptajeBarODD2, 7, 3, 1, 1)
+        topLayout.addWidget(self.odd_under25, 8, 0, 1, 1)
+        topLayout.addWidget(self.ptajeBarUNDER25, 8, 1, 1, 1)
+        topLayout.addWidget(self.progressBar, 2, 4, 1, 1)
   
         midLayout.addWidget(self.resultados, 0, 0, 1, 1)
         midLayout.addWidget(self.ptajeEmpates, 1, 0, 1, 1)
@@ -171,6 +167,7 @@ class Filters(QMainWindow):
 
         layout.addLayout(topLayout)
         layout.addLayout(midLayout)
+        layout.addWidget(self.loadData)
         layout.addWidget(self.table)
         globalWidgets.setLayout(layout)
         
@@ -221,6 +218,24 @@ class Filters(QMainWindow):
         else:
             self.pjaway.setText("PJAway:   {}".format(self.ptajeBarPJAway.value()))
 
+    def actualizarODD1(self):
+        if self.ptajeBarODD1.value() >= 10:
+            self.odd1.setText("ODD1:   {}+".format(self.ptajeBarODD1.value()))
+        else:
+            self.odd1.setText("ODD1:   {}".format(self.ptajeBarODD1.value()))
+    
+    def actualizarODD2(self):
+        if self.ptajeBarODD2.value() >= 10:
+            self.odd2.setText("ODD2:   {}+".format(self.ptajeBarODD2.value()))
+        else:
+            self.odd2.setText("ODD2:   {}".format(self.ptajeBarODD2.value()))    
+    
+    def actualizarUNDER25(self):
+        if self.ptajeBarUNDER25.value() >= 10:
+            self.odd_under25.setText("ODD_UNDER25:   {}+".format(self.ptajeBarUNDER25.value()))
+        else:
+            self.odd_under25.setText("ODD_UNDER25:   {}".format(self.ptajeBarUNDER25.value()))
+    
     def actualizarRempate(self):
         if self.ptajeBarRempate.value() >= 10:
             self.rempate.setText("Rempate:   {}+".format(self.ptajeBarRempate.value()))
@@ -341,56 +356,73 @@ class Filters(QMainWindow):
             self.ptajeEmpates.setText(str(round(self.empatesNum/len(self.currentDatos) * 100, 2)) + "% de Empates")
 
     def aplicarResultado(self):
-        self.currentDatos = []
-        isIn = True
-        self.progressBar.setValue(0)
-        self.progressBar.show()
-        contador = 0
-        for elemento in self.datos:
-            contador+= 100
+        if(len(self.datos) > 0):
+            self.currentDatos = []
             isIn = True
-            if not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[4], float) and elemento[4] >= self.ptajeBarPGHD.value())):
-                isIn = False
+            self.progressBar.setValue(0)
+            self.progressBar.show()
+            contador = 0
+            for elemento in self.datos:
+                contador+= 100
+                isIn = True
+                if not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[4], float) and elemento[4] >= self.ptajeBarPGHD.value())):
+                    isIn = False
 
-            if isIn and not(self.ptajeBarPGAD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGAD.value())):
-                 isIn = False
+                if isIn and not(self.ptajeBarPGAD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGAD.value())):
+                    isIn = False
 
-            if isIn and not(self.ptajeBarPHD.value() <= 0 or (isinstance(elemento[6], float) and elemento[6] >= self.ptajeBarPHD.value())):
-                 isIn = False
+                if isIn and not(self.ptajeBarPHD.value() <= 0 or (isinstance(elemento[6], float) and elemento[6] >= self.ptajeBarPHD.value())):
+                    isIn = False
 
-            if isIn and not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPAD.value())):
-                 isIn = False
+                if isIn and not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPAD.value())):
+                    isIn = False
 
-            if isIn and not(self.ptajeBarTGPG.value() <= 0 or (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.value())):
-                 isIn = False
+                if isIn and not(self.ptajeBarTGPG.value() <= 0 or (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.value())):
+                    isIn = False
 
-            if isIn and not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
-                 isIn = False
+                if isIn and not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
+                    isIn = False
 
-            if isIn and not(self.ptajeBarPPGAway.value() <= 0 or (isinstance(elemento[11], float) and elemento[11] >= self.ptajeBarPPGAway.value())):
-                 isIn = False
+                if isIn and not(self.ptajeBarPPGAway.value() <= 0 or (isinstance(elemento[11], float) and elemento[11] >= self.ptajeBarPPGAway.value())):
+                    isIn = False
 
-            if isIn and not(self.ptajeBarPJHome.value() <= 0 or elemento[12] >= self.ptajeBarPJHome.value()):
-                 isIn = False
+                if isIn and not(self.ptajeBarPJHome.value() <= 0 or elemento[12] >= self.ptajeBarPJHome.value()):
+                    isIn = False
 
-            if isIn and not(self.ptajeBarPJAway.value() <= 0 or elemento[13] >= self.ptajeBarPJAway.value()):
-                 isIn = False  
-            
-            if isIn and not(self.ptajeBarRempate.value() <= 0 or elemento[14] >= self.ptajeBarRempate.value()):
-                 isIn = False
-            
-            if  isIn:
-                self.currentDatos.append(elemento)
-            
-            if(contador%1500 == 0):
-                self.progressBar.setValue(contador/len(self.datos))
-            
-        self.progressBar.hide()
-        self.getActualEmpates()
-        self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
-        self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
-        self.model = TableModel(self.data, self.listadeEmpates)
-        self.table.setModel(self.model)
+                if isIn and not(self.ptajeBarPJAway.value() <= 0 or elemento[13] >= self.ptajeBarPJAway.value()):
+                    isIn = False  
+                
+                if isIn and not(self.ptajeBarRempate.value() <= 0 or elemento[14] >= self.ptajeBarRempate.value()):
+                    isIn = False
+
+                if isIn and not(self.ptajeBarODD1.value() <= 0 or elemento[15] >= self.ptajeBarODD1.value()):
+                    isIn = False
+
+                if isIn and not(self.ptajeBarODD2.value() <= 0 or elemento[16] >= self.ptajeBarODD2.value()):
+                    isIn = False  
+                
+                if isIn and not(self.ptajeBarUNDER25.value() <= 0 or elemento[17] >= self.ptajeBarUNDER25.value()):
+                    isIn = False
+                
+                if  isIn:
+                    self.currentDatos.append(elemento)
+                
+                if(contador%1500 == 0):
+                    self.progressBar.setValue(contador/len(self.datos))
+                
+            self.progressBar.hide()
+            self.getActualEmpates()
+            self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
+            self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
+            self.model = TableModel(self.data, self.listadeEmpates)
+            self.table.setModel(self.model)
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("Try to load the database")
+            msg.setWindowTitle("Database empty")
+            msg.exec_()
+
 
     def sortTable(self, sortingColumn):
         self.progressBar.setValue(0)
@@ -415,3 +447,62 @@ class Filters(QMainWindow):
         dlg = SaveDialog(self)
         dlg.setWindowTitle("Save/Load profile")
         dlg.exec_()
+
+    def loadDatabase(self):
+        self.datos =[]
+        self.currentDatos = self.datos
+        self.progressBar.show()
+        rows = self.db.query("""SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
+                        HW, HD, HL, AW, AD, AL, GOALSGH, GOALSGA, GOALCGH, GOALCGA, REH, REA, REHH, REAA, HHW, HHD, HHL, AAW, AAL, AAD FROM FIXTURES """)
+        self.progressBar.setValue(50)
+        self.teams = self.db.query("SELECT * FROM TEAMS ORDER BY ascii(ID) ASC")
+
+        for row in rows:   
+
+            maRalla = []
+            maRalla.append(self.getDate(row["DATE"]))
+            maRalla.append(self.getTime(row["TIME"]))
+            maRalla.append(self.findName(row["ID_HOME"]))
+            maRalla.append(self.findName(row["ID_AWAY"]))
+            maRalla.append(self.getTheGlobalHomePercentage(row))
+            maRalla.append(self.getTheGlobalAwayPercentage(row))
+            maRalla.append(self.getTheHomePercentage(row))
+            maRalla.append(self.getTheAwayPercentage(row))
+            maRalla.append(self.getResultado(row))
+            maRalla.append(self.getTotalGoalsInGame(row))
+            maRalla.append(self.getPPGHome(row))
+            maRalla.append(self.getPPGAway(row))
+            maRalla.append(self.getPJHome(row))
+            maRalla.append(self.getPJAway(row))
+            maRalla.append(self.getRempate(row))
+            maRalla.append(row["ODDS_1"])
+            maRalla.append(row["ODDS_2"])
+            maRalla.append(row["ODDS_UNDER25FT"])
+
+            self.datos.append(maRalla)
+            if(len(self.datos) % 100):
+                self.progressBar.setValue(len(self.datos)/2/len(rows) + 50)
+
+        self.getActualEmpates()
+        self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
+        self.partidos.setText(str(len(self.currentDatos))+ "Partidos")
+        self.model = TableModel(self.data, self.listadeEmpates)
+        self.table.setModel(self.model)
+        self.progressBar.hide()
+
+"""
+    @pyqtSlot()
+    def conectarConNextTabla(self):
+        data = [self.ptajeBarPGHD.value(),
+                self.ptajeBarPGAD.value(),
+                self.ptajeBarPHD.value(),
+                self.ptajeBarPAD.value(),
+                self.ptajeBarPPGHome.value(),
+                self.ptajeBarPPGAway.value(),
+                self.ptajeBarTGPG.value(),
+                self.ptajeBarPJHome.value(),
+                self.ptajeBarPJAway.value(),
+                self.ptajeBarRempate.value(),
+                ]
+        self.filterValues.emit(data)
+"""
