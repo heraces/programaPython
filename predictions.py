@@ -1,12 +1,17 @@
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QProgressBar,
                              QMainWindow, QSlider, QWidget, QTableView, 
                              QVBoxLayout, QCheckBox, QHBoxLayout, QGridLayout)
                                                           
 from PyQt5.QtGui import QIcon
-
+from threaded import Orderer
+from tableModel import TableModel
+from localDatabase import SaveDialog
+from externDatabase import Database
+import pandas as pd
 
 class Predictions(QMainWindow):
+    testingValues = pyqtSignal(list)
     def __init__(self):
         super().__init__()
         #creates widgets
@@ -27,8 +32,12 @@ class Predictions(QMainWindow):
         self.pjhome = QLabel("PJHome:   0")
         self.pjaway = QLabel("PJAway:    0")
         self.rempate = QLabel("REmpate:  0")
+        self.odd1 = QLabel("ODD1:   0")
+        self.odd2 = QLabel("ODD2:    0")
+        self.odd_under25 = QLabel("ODD_UNDER25:  0")
 
-        self.binding = QPushButton("Binging")
+        self.binding = QPushButton("Copy to baktesting")
+        self.binding.setIcon(self.style().standardIcon(getattr(QStyle, "SP_CommandLink")))
 
         self.ptajeBarPGHD = QSlider(Qt.Horizontal)
         self.ptajeBarPGAD = QSlider(Qt.Horizontal)
@@ -40,6 +49,9 @@ class Predictions(QMainWindow):
         self.ptajeBarPJHome = QSlider(Qt.Horizontal)
         self.ptajeBarPJAway = QSlider(Qt.Horizontal)
         self.ptajeBarRempate = QSlider(Qt.Horizontal)
+        self.ptajeBarODD1 = QSlider(Qt.Horizontal)
+        self.ptajeBarODD2 = QSlider(Qt.Horizontal)
+        self.ptajeBarUNDER25 = QSlider(Qt.Horizontal)
 
         self.progressBar = QProgressBar()
         self.progressBar.hide()
@@ -55,6 +67,9 @@ class Predictions(QMainWindow):
         self.ptajeBarPJAway.setRange(0, 50)
         self.ptajeBarPJHome.setRange(0, 50)
         self.ptajeBarRempate.setRange(0, 10)
+        self.ptajeBarODD1.setRange(0, 10)
+        self.ptajeBarODD2.setRange(0, 10)
+        self.ptajeBarUNDER25.setRange(0, 10)
 
         #widgets layout2
         self.resultados = QLabel("Resultados")
@@ -68,8 +83,27 @@ class Predictions(QMainWindow):
         self.table = QTableView()
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setSectionsClickable(True)
+        self.table.setStyleSheet("background-color: rgb(255,235,230)")
 
 
+        #conectores
+        self.ptajeBarPGHD.valueChanged.connect(self.actualizarPGHD)
+        self.ptajeBarPGAD.valueChanged.connect(self.actualizarPGAD)
+        self.ptajeBarPHD.valueChanged.connect(self.actualizarPHD)
+        self.ptajeBarPAD.valueChanged.connect(self.actualizarPAD)
+        self.ptajeBarTGPG.valueChanged.connect(self.actualizarTGPG)
+        self.ptajeBarPPGAway.valueChanged.connect(self.actualizarPPGAway)
+        self.ptajeBarPPGHome.valueChanged.connect(self.actualizarPPGHome)
+        self.ptajeBarPJAway.valueChanged.connect(self.actualizarPJAway)
+        self.ptajeBarPJHome.valueChanged.connect(self.actualizarPJHome)
+        self.ptajeBarRempate.valueChanged.connect(self.actualizarRempate)
+        self.ptajeBarODD1.valueChanged.connect(self.actualizarODD1)
+        self.ptajeBarODD2.valueChanged.connect(self.actualizarODD2)
+        self.ptajeBarUNDER25.valueChanged.connect(self.actualizarUNDER25)
+
+        self.save.clicked.connect(self.guardarSetts)
+        self.binding.clicked.connect(self.conectarConTablaAnterior)
+        self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
 
         #create layouts
         layout = QVBoxLayout()
@@ -101,6 +135,12 @@ class Predictions(QMainWindow):
         topLayout.addWidget(self.ptajeBarPJAway, 5, 3, 1, 1)
         topLayout.addWidget(self.rempate, 6, 0, 1, 1)
         topLayout.addWidget(self.ptajeBarRempate, 6, 1, 1, 1)
+        topLayout.addWidget(self.odd1, 7, 0, 1, 1)
+        topLayout.addWidget(self.ptajeBarODD1, 7, 1, 1, 1)
+        topLayout.addWidget(self.odd2, 7, 2, 1, 1)
+        topLayout.addWidget(self.ptajeBarODD2, 7, 3, 1, 1)
+        topLayout.addWidget(self.odd_under25, 8, 0, 1, 1)
+        topLayout.addWidget(self.ptajeBarUNDER25, 8, 1, 1, 1)
 
         midLayout.addWidget(self.resultados, 0, 0, 1, 1)
         midLayout.addWidget(self.ptajeEmpates, 1, 0, 1, 1)
@@ -114,3 +154,129 @@ class Predictions(QMainWindow):
         
         self.setMinimumSize(QSize(1200, 600))
         self.setCentralWidget(globalWidgets)
+
+
+    def actualizarPGHD(self):
+        self.pghd.setText("PGHD:  {}%".format(self.ptajeBarPGHD.value()))
+    
+    def actualizarPGAD(self):
+        self.pgad.setText("PGAD:  {}%".format(self.ptajeBarPGAD.value()))
+
+    def actualizarPHD(self):
+        self.phd.setText("PHD:   {}%".format(self.ptajeBarPHD.value()))
+
+    def actualizarPAD(self):
+        self.pad.setText("PAD:   {}%".format(self.ptajeBarPAD.value()))
+
+    def actualizarTGPG(self):
+        if self.ptajeBarTGPG.value() >= 10:
+            self.tgpg.setText("TGPG:   {}+".format(self.ptajeBarTGPG.value()))
+        else :
+            self.tgpg.setText("TGPG:   {}".format(self.ptajeBarTGPG.value()))
+
+    def actualizarPPGHome(self):
+        if self.ptajeBarPPGHome.value() >= 10:
+            self.ppghome.setText("PPGHome:   {}+".format(self.ptajeBarPPGHome.value()))
+        else:
+            self.ppghome.setText("PPGHome:   {}".format(self.ptajeBarPPGHome.value()))
+    
+    def actualizarPPGAway(self):
+        if self.ptajeBarPPGAway.value() >= 10:
+            self.ppgaway.setText("PPGAway:   {}+".format(self.ptajeBarPPGAway.value()))
+        else:
+            self.ppgaway.setText("PPGAway:   {}".format(self.ptajeBarPPGAway.value()))
+
+        
+    def actualizarPJHome(self):
+        if self.ptajeBarPJHome.value() >= 50:
+            self.pjhome.setText("PJHome:   {}+".format(self.ptajeBarPJHome.value()))
+        else:
+            self.pjhome.setText("PJHome:   {}".format(self.ptajeBarPJHome.value()))
+    
+    def actualizarPJAway(self):
+        if self.ptajeBarPJAway.value() >= 50:
+            self.pjaway.setText("PJAway:   {}+".format(self.ptajeBarPJAway.value()))
+        else:
+            self.pjaway.setText("PJAway:   {}".format(self.ptajeBarPJAway.value()))
+
+    def actualizarODD1(self):
+        if self.ptajeBarODD1.value() >= 10:
+            self.odd1.setText("ODD1:   {}+".format(self.ptajeBarODD1.value()))
+        else:
+            self.odd1.setText("ODD1:   {}".format(self.ptajeBarODD1.value()))
+    
+    def actualizarODD2(self):
+        if self.ptajeBarODD2.value() >= 10:
+            self.odd2.setText("ODD2:   {}+".format(self.ptajeBarODD2.value()))
+        else:
+            self.odd2.setText("ODD2:   {}".format(self.ptajeBarODD2.value()))    
+    
+    def actualizarUNDER25(self):
+        if self.ptajeBarUNDER25.value() >= 10:
+            self.odd_under25.setText("ODD_UNDER25:   {}+".format(self.ptajeBarUNDER25.value()))
+        else:
+            self.odd_under25.setText("ODD_UNDER25:   {}".format(self.ptajeBarUNDER25.value()))
+    
+    def actualizarRempate(self):
+        if self.ptajeBarRempate.value() >= 10:
+            self.rempate.setText("Rempate:   {}+".format(self.ptajeBarRempate.value()))
+        else:
+            self.rempate.setText("Rempate:   {}".format(self.ptajeBarRempate.value()))
+
+
+    def sortTable(self, sortingColumn):
+        self.progressBar.setValue(0)
+        self.progressBar.show()
+        worker = Orderer(self.currentDatos, sortingColumn)
+        worker.signals.progress.connect(self.update_progress)
+        worker.signals.finished.connect(self.endBar)
+        self.threadpool.start(worker)
+
+    def update_progress(self, progress):
+        self.progressBar.setValue(progress)
+
+    def endBar(self):
+        self.progressBar.hide()
+        self.getActualEmpates()
+        self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
+        self.model = TableModel(self.data, self.listadeEmpates)
+        self.table.setModel(self.model)
+        self.getActualEmpates()
+
+    def guardarSetts(self):
+        dlg = SaveDialog(self)
+        dlg.setWindowTitle("Save/Load profile")
+        dlg.exec_()
+
+
+    def copyingToPredictions(self, esta):
+        self.ptajeBarPGHD.setValue(esta[0])
+        self.ptajeBarPGAD.setValue(esta[1])
+        self.ptajeBarPHD.setValue(esta[2])
+        self.ptajeBarPAD.setValue(esta[3])
+        self.ptajeBarPPGHome.setValue(esta[4])
+        self.ptajeBarPPGAway.setValue(esta[5])
+        self.ptajeBarTGPG.setValue(esta[6])
+        self.ptajeBarPJHome.setValue(esta[7])
+        self.ptajeBarPJAway.setValue(esta[8])
+        self.ptajeBarRempate.setValue(esta[9])
+        self.ptajeBarODD1.setValue(esta[10])
+        self.ptajeBarODD2.setValue(esta[11])
+        self.ptajeBarUNDER25.setValue(esta[12])
+
+    def conectarConTablaAnterior(self):
+        data = [self.ptajeBarPGHD.value(),
+                        self.ptajeBarPGAD.value(),
+                        self.ptajeBarPHD.value(),
+                        self.ptajeBarPAD.value(),
+                        self.ptajeBarPPGHome.value(),
+                        self.ptajeBarPPGAway.value(),
+                        self.ptajeBarTGPG.value(),
+                        self.ptajeBarPJHome.value(),
+                        self.ptajeBarPJAway.value(),
+                        self.ptajeBarRempate.value(),
+                        self.ptajeBarODD1.value(),
+                        self.ptajeBarODD2.value(),
+                        self.ptajeBarUNDER25.value()
+                        ]
+        self.testingValues.emit(data)

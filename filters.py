@@ -1,5 +1,5 @@
 import pandas as pd
-from PyQt5.QtCore import QSize, Qt, QThreadPool, pyqtSlot, pyqtSignal
+from PyQt5.QtCore import QSize, Qt, QThreadPool, pyqtSignal
 
 from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton, QStyle, QMessageBox,
                              QMainWindow, QSlider, QWidget, QTableView, QVBoxLayout, 
@@ -14,7 +14,7 @@ from threaded import Orderer, OrdererSignals
 
 
 class Filters(QMainWindow):
-    filterValues = pyqtSignal([])
+    filterValues = pyqtSignal(list)
 
     def __init__(self):
         super().__init__()
@@ -22,7 +22,7 @@ class Filters(QMainWindow):
         globalWidgets = QWidget()
         globalWidgets.setWindowTitle("Backtesting")
         #widgets layout1
-        
+        self.setStyleSheet("background-color: rgb(200,215,240)")
         self.filtros = QLabel("Filtros")
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.pghd = QLabel("PGHD:  0%")
@@ -91,6 +91,7 @@ class Filters(QMainWindow):
         self.table = QTableView()
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setSectionsClickable(True)
+        self.table.setStyleSheet("background-color: rgb(230,235,255)")
 
         #conectores
         self.ptajeBarPGHD.valueChanged.connect(self.actualizarPGHD)
@@ -106,9 +107,10 @@ class Filters(QMainWindow):
         self.ptajeBarODD1.valueChanged.connect(self.actualizarODD1)
         self.ptajeBarODD2.valueChanged.connect(self.actualizarODD2)
         self.ptajeBarUNDER25.valueChanged.connect(self.actualizarUNDER25)
+
         self.aplicar.clicked.connect(self.aplicarResultado)
         self.save.clicked.connect(self.guardarSetts)
-        #self.binding.clicked.connect(self.conectarConNextTabla)
+        self.binding.clicked.connect(self.conectarConNextTabla)
         self.loadData.clicked.connect(self.loadDatabase)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
         
@@ -490,8 +492,7 @@ class Filters(QMainWindow):
         self.table.setModel(self.model)
         self.progressBar.hide()
 
-"""
-    @pyqtSlot()
+
     def conectarConNextTabla(self):
         data = [self.ptajeBarPGHD.value(),
                 self.ptajeBarPGAD.value(),
@@ -503,6 +504,23 @@ class Filters(QMainWindow):
                 self.ptajeBarPJHome.value(),
                 self.ptajeBarPJAway.value(),
                 self.ptajeBarRempate.value(),
+                self.ptajeBarODD1.value(),
+                self.ptajeBarODD2.value(),
+                self.ptajeBarUNDER25.value()
                 ]
         self.filterValues.emit(data)
-"""
+
+    def copyingTofilters(self, esta):
+        self.ptajeBarPGHD.setValue(esta[0])
+        self.ptajeBarPGAD.setValue(esta[1])
+        self.ptajeBarPHD.setValue(esta[2])
+        self.ptajeBarPAD.setValue(esta[3])
+        self.ptajeBarPPGHome.setValue(esta[4])
+        self.ptajeBarPPGAway.setValue(esta[5])
+        self.ptajeBarTGPG.setValue(esta[6])
+        self.ptajeBarPJHome.setValue(esta[7])
+        self.ptajeBarPJAway.setValue(esta[8])
+        self.ptajeBarRempate.setValue(esta[9])
+        self.ptajeBarODD1.setValue(esta[10])
+        self.ptajeBarODD2.setValue(esta[11])
+        self.ptajeBarUNDER25.setValue(esta[12])
