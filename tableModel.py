@@ -9,10 +9,11 @@ class TableModel(QAbstractTableModel):
         
     def data(self, index, role):
         if role == Qt.BackgroundRole:            
-            if len(self.colorList) >= index.row() and self.colorList[index.row()]:    
-                return QtGui.QColor(70, 240, 40, 200)
-            else:
-                return QtGui.QColor(230, 40, 20, 100)
+            if len(self.colorList) >= index.row():
+                if self.colorList[index.row()] == 1:    
+                    return QtGui.QColor(70, 240, 40, 200)
+                elif self.colorList[index.row()] == 2:
+                    return QtGui.QColor(230, 40, 20, 100)
 
         if role == Qt.DisplayRole:
             # Get the raw value

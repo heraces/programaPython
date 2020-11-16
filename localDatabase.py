@@ -297,6 +297,7 @@ class SaveDialog(QDialog):
                 json.dump(data, json_file)
             
             self.actualizarLista()
+            self.ssavedData.setText("Saved data:")
 
 
     def addProfile(self):
@@ -332,7 +333,7 @@ class SaveDialog(QDialog):
                     msg.exec_()
 
     def setsavedBars(self):
-        if self.listProfiles.count() >= 1:
+        if len(self.listProfiles.selectedItems()) >= 1:
             self.ssavedData.setText("Saved data: {}".format(self.listProfiles.currentItem().text()))
             with open('svdStngs.json', "r") as json_file:
                 data = json.load(json_file)     
@@ -347,9 +348,9 @@ class SaveDialog(QDialog):
                 self.savedptajeBarPJHome.setValue(data[self.listProfiles.currentItem().text()]["PJHome"] * self.savedptajeBarPJHome.maximum() / self.maninWindow.ptajeBarPJHome.maximum())
                 self.savedptajeBarPJAway.setValue(data[self.listProfiles.currentItem().text()]["PJAway"] * self.savedptajeBarPJAway.maximum() / self.maninWindow.ptajeBarPJAway.maximum())
                 self.savedptajeBarRempate.setValue(data[self.listProfiles.currentItem().text()]["REmpate"] * self.savedptajeBarRempate.maximum() / self.maninWindow.ptajeBarRempate.maximum())         
-                self.savedptajeBarODD1.setValue(data[self.listProfiles.currentItem().text()]["REmpate"] * self.savedptajeBarODD1.maximum() / self.maninWindow.ptajeBarODD1.maximum())         
-                self.savedptajeBarODD2.setValue(data[self.listProfiles.currentItem().text()]["REmpate"] * self.savedptajeBarODD2.maximum() / self.maninWindow.ptajeBarODD2.maximum())         
-                self.savedptajeBarODD_UNDER25.setValue(data[self.listProfiles.currentItem().text()]["REmpate"] * self.savedptajeBarODD_UNDER25.maximum() / self.maninWindow.ptajeBarUNDER25.maximum())         
+                self.savedptajeBarODD1.setValue(data[self.listProfiles.currentItem().text()]["ODDS1"] * self.savedptajeBarODD1.maximum() / self.maninWindow.ptajeBarODD1.maximum())         
+                self.savedptajeBarODD2.setValue(data[self.listProfiles.currentItem().text()]["ODDS2"] * self.savedptajeBarODD2.maximum() / self.maninWindow.ptajeBarODD2.maximum())         
+                self.savedptajeBarODD_UNDER25.setValue(data[self.listProfiles.currentItem().text()]["ODDS_UNDER25"] * self.savedptajeBarODD_UNDER25.maximum() / self.maninWindow.ptajeBarUNDER25.maximum())         
 
     def setCurrentBars(self):
 

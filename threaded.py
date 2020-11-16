@@ -1,9 +1,14 @@
 
 from PyQt5.QtCore import QObject, QRunnable, pyqtSignal, pyqtSlot
+from externDatabase import Database
 
 class OrdererSignals(QObject):
     progress = pyqtSignal(int)
     finished = pyqtSignal()
+
+class DbSignals(QObject):
+    progress = pyqtSignal(int)
+    data = pyqtSignal(list)
     
 class Orderer(QRunnable):
     def __init__(self, datos, columna):
@@ -36,3 +41,136 @@ class Orderer(QRunnable):
                 self.signals.progress.emit(100-int(indice/len(self.datos) * 100))
             
         self.signals.finished.emit()
+
+class ChargeDatabase(QRunnable):
+    def __init__(self, query):
+        super().__init__()
+        # Store constructor arguments (re-used for processing)
+        self.signals = DbSignals()
+        self.query = query
+
+    @pyqtSlot()
+    def run(self):
+        datos =[]
+        db = Database()
+        rows = db.query(self.query)
+        self.teams = db.query("SELECT * FROM TEAMS ORDER BY ascii(ID) ASC")
+
+        for row in rows:   
+
+            maRalla = []
+            maRalla.append(self.getDate(row["DATE"]))
+            maRalla.append(self.getTime(row["TIME"]))
+            maRalla.append(self.findName(row["ID_HOME"]))
+            maRalla.append(self.findName(row["ID_AWAY"]))
+            maRalla.append(self.getTheGlobalHomePercentage(row))
+            maRalla.append(self.getTheGlobalAwayPercentage(row))
+            maRalla.append(self.getTheHomePercentage(row))
+            maRalla.append(self.getTheAwayPercentage(row))
+            maRalla.append(self.getResultado(row))
+            maRalla.append(self.getTotalGoalsInGame(row))
+            maRalla.append(self.getPPGHome(row))
+            maRalla.append(self.getPPGAway(row))
+            maRalla.append(self.getPJHome(row))
+            maRalla.append(self.getPJAway(row))
+            maRalla.append(self.getRempate(row))
+            maRalla.append(row["ODDS_1"])
+            maRalla.append(row["ODDS_2"])
+            maRalla.append(row["ODDS_UNDER25FT"])
+
+            datos.append(maRalla)
+            if(len(datos) % 100):
+                self.signals.progress.emit(len(datos)/2/len(rows) + 50)
+
+        self.signals.data.emit(datos)
+        del db
+
+
+    
+    def findName(self, targetID):
+        primero = 0
+        ultimo = len(self.teams)-1
+        medio = int(ultimo/2)
+        while primero <= ultimo:
+            if targetID == self.teams[medio]["ID"]:
+                return self.teams[medio]["NAME"]
+
+            if targetID > self.teams[medio]["ID"]:
+                primero = medio+1
+            else:
+                ultimo = medio-1
+            medio = int((ultimo+primero)/2)
+        return ""
+
+    
+    def getDate(self, fecha):
+        return fecha[:4] + "/" + fecha[4:6] + "/" + fecha[6:]
+
+
+    def getTime(self, fecha):
+        while len(fecha) < 4:
+             fecha = "0" + fecha
+        return fecha[:2] + " : " + fecha[2:]
+
+
+    def getTheGlobalHomePercentage(self, row):
+        if row["HW"] + row["HD"]+ row["HL"] != 0:
+            return round(row["HD"] / (row["HW"] + row["HD"]+ row["HL"]) * 100, 3)
+
+        return "N/D"
+
+    def getTheGlobalAwayPercentage(self, row):
+        if row["AW"] + row["AD"]+ row["AL"] != 0:
+            return round(row["AD"] / (row["AW"] + row["AD"]+ row["AL"]) * 100, 3)
+
+        return "N/D"
+
+    def getTheHomePercentage(self, row):
+        if row["HHW"] + row["HHD"]+ row["HHL"] != 0:
+            return round(row["HHD"] / (row["HHW"] + row["HHD"]+ row["HL"]) * 100, 3)
+
+        return "N/D"
+
+    def getTheAwayPercentage(self, row):
+        if row["AAW"] + row["AAD"]+ row["AAL"] != 0:
+            return round(row["AAD"] / (row["AAW"] + row["AAD"]+ row["AAL"])* 100, 3) 
+
+        return "N/D"
+
+    def getTotalGoalsInGame(self, row):
+        if row["AW"] + row["AD"]+ row["AL"] != 0 or row["HW"] + row["HD"]+ row["HL"] != 0:
+            a = 0
+            b = 0
+            if row["HW"] + row["HD"]+ row["HL"] != 0:
+                a = (row["GOALSGH"] + row["GOALCGH"]) / (row["HW"] + row["HD"]+ row["HL"])
+            if row["AW"] + row["AD"]+ row["AL"] != 0:
+                b = (row["GOALSGH"] + row["GOALCGH"]) / (row["AW"] + row["AD"]+ row["AL"])
+            
+            return round(((a+b)/2), 3)
+
+        return "N/D"
+
+    def getPPGHome(self, row):
+        if row["HW"] + row["HD"]+ row["HL"] != 0:
+            return round((3*row["HW"] + row["HD"])/(row["HW"] + row["HD"]+ row["HL"]), 3)
+        return "N/D"
+
+    def getPPGAway(self, row):
+        if row["AW"] + row["AD"]+ row["AL"] != 0:
+            return round((3*row["AW"] + row["AD"])/(row["AW"] + row["AD"]+ row["AL"]), 3)
+        return "N/D"
+
+    def getPJHome(self, row):
+        return row["HW"] + row["HD"]+ row["HL"]
+
+    def getPJAway(self, row):
+        return row["AW"] + row["AD"]+ row["AL"]
+
+    def getRempate(self, row):
+        return row["REH"] + row["REA"]+ row["REHH"] + row["REAA"]
+
+    def getResultado(self, row):
+        if row["FTHG"] < 0:
+            return "N/D"
+        return str(row["FTHG"]) + " - " + str(row["FTAG"])
+

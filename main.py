@@ -10,7 +10,6 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setStyleSheet("background-color: rgb(240,190,200)")
         self.setWindowIcon(self.style().standardIcon(getattr(QStyle, "SP_DesktopIcon")))
         globalWidgets = Filters()
         predictions = Predictions()
