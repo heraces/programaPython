@@ -16,8 +16,8 @@ class DobleSlider(QWidget):
         self.range = rango
         self.interval = interval
         self.visualInterval = width/(rango/interval)
+        self.threshold = 0.2
 
-        print(self.visualInterval)
         #medidas del handle
         self.handleWidth = self.width/50
         self.handleHeight = self.height
@@ -25,15 +25,18 @@ class DobleSlider(QWidget):
         #pos del handler de la izquierda
         self.leftTop = 0
         self.leftLeft = 0
+        self.leftPos = 0
 
         #pos del handler de la derecha
         self.rigthTop = 0
-        self.rigthLeft = self.width/100*98
+        self.rigthLeft = self.width/50*49
+        self.rightPos = self.range/self.interval
 
         #letsumove
         self.letsuMove = False
         self.eselleft = False
         self.eselRigth = False
+        self.initPos = 0
 
         #esto no se borra
         layout = QVBoxLayout()
@@ -46,7 +49,7 @@ class DobleSlider(QWidget):
         painter.setPen(QPen(Qt.gray, 1, Qt.SolidLine))
         painter.setBrush(QBrush(Qt.gray, Qt.SolidPattern))
         #pintamos en guion/rallita/rail
-        painter.drawRect(self.width/100, self.height/5*2, self.width/100*99, self.height/5)
+        painter.drawRect(0, self.height/5*2, self.width, self.height/5)
         #cambiamos el color
         painter.setPen(QPen(Qt.blue, 1, Qt.SolidLine))
         painter.setBrush(QBrush(Qt.blue, Qt.SolidPattern))
@@ -69,22 +72,43 @@ class DobleSlider(QWidget):
                 self.eselRigth = True
                 self.letsuMove = True 
                 return
+
+            
+            self.initPos = event.x()
             
 
     def mouseReleaseEvent(self, event):
             self.letsuMove = False
-            self.eselleft = False
-            self.eselRigth = False
+            if self.eselleft:
+                if event.x() - self.handleWidth/2 < 0:
+                    self.leftPos = 0
+                elif event.x() + self.handleWidth/2 > self.rigthLeft:
+                    self.leftPos = self.rightPos -1
+                else:
+                    self.leftPos = int(abs(self.initPos-event.x() - self.handleWidth/2)/self.visualInterval)
+                print(self.leftPos)
+                self.leftLeft = self.leftPos * self.visualInterval
+                self.eselleft = False
+            elif self.eselRigth:
+                if event.x() + self.handleWidth/2 >= self.width:
+                    self.rightPos = self.range/self.interval
+                elif event.x() - self.handleWidth/2 < self.leftLeft +self.handleWidth:
+                    self.rightPos = self.leftPos +1
+                else:
+                    self.rightPos = int(abs(self.initPos-event.x() - self.handleWidth/2)/self.visualInterval)
+                self.rigthLeft = self.rightPos * self.visualInterval
+                self.eselRigth = False
+                
+            self.initPos = 0
 
     def mouseMoveEvent(self, event): 
         if event.buttons() == Qt.LeftButton and self.letsuMove:
-            if self.eselleft and event.x() >= 0 and event.x() + self.handleWidth < self.rigthLeft:
-                self.leftLeft = event.x()
+            if self.eselleft and event.x()-self.handleWidth/2 >= 0 and event.x() + self.handleWidth/2 < self.rigthLeft:
+                self.leftLeft = event.x()-self.handleWidth/2
                 return
 
-            elif self.eselRigth and event.x() > self.rigthLeft + self.handleWidth and event.x() <= self.width-self.width/100*98: 
-                self.rigthLeft = event.x()
+            elif self.eselRigth and event.x() - self.handleWidth/2 > self.leftLeft + self.handleWidth and event.x() + self.handleWidth/2 <= self.width: 
+                self.rigthLeft = event.x()-self.handleWidth/2
                 return
 
             self.paintEvent(self)
-  
