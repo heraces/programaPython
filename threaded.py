@@ -22,7 +22,16 @@ class Orderer(QRunnable):
     def run(self):
         for indice in range(len(self.datos)-1, 0, -1):
             for sorting in range(indice):
-                if isinstance(self.datos[sorting][self.sortingColumn], float):
+                if self.sortingColumn == 0:
+                    first = self.datos[indice][0][-4:] + self.datos[indice][0][3:5] + self.datos[indice][0][:2]
+                    second = self.datos[sorting][0][-4:] + self.datos[sorting][0][3:5] + self.datos[sorting][0][:2]
+                    if int(first) < int(second):
+                        line = self.datos[indice]
+                        self.datos[indice] = self.datos[sorting]
+                        self.datos[sorting] = line
+
+
+                elif isinstance(self.datos[sorting][self.sortingColumn], float):
                         if isinstance(self.datos[indice][self.sortingColumn], str):
                             line = self.datos[indice]
                             self.datos[indice] = self.datos[sorting]
@@ -32,7 +41,8 @@ class Orderer(QRunnable):
                             self.datos[indice] = self.datos[sorting]
                             self.datos[sorting] = line
 
-                elif isinstance(self.datos[sorting][self.sortingColumn], str) and isinstance(self.datos[indice][self.sortingColumn], str):
+                elif (isinstance(self.datos[sorting][self.sortingColumn], str) and isinstance(self.datos[indice][self.sortingColumn], str) and
+                        self.datos[sorting][self.sortingColumn] > self.datos[indice][self.sortingColumn]):
                         line = self.datos[indice]
                         self.datos[indice] = self.datos[sorting]
                         self.datos[sorting] = line
@@ -45,7 +55,7 @@ class Orderer(QRunnable):
 class ChargeDatabase(QRunnable):
     def __init__(self, query):
         super().__init__()
-        # Store constructor arguments (re-used for processing)
+        
         self.signals = DbSignals()
         self.query = query
 
@@ -80,7 +90,7 @@ class ChargeDatabase(QRunnable):
 
             datos.append(maRalla)
             if(len(datos) % 100):
-                self.signals.progress.emit(len(datos)/2/len(rows) + 50)
+                self.signals.progress.emit(len(datos)/len(rows) * 50)
 
         self.signals.data.emit(datos)
         del db
@@ -104,7 +114,7 @@ class ChargeDatabase(QRunnable):
 
     
     def getDate(self, fecha):
-        return fecha[:4] + "/" + fecha[4:6] + "/" + fecha[6:]
+        return fecha[6:] + "/" + fecha[4:6] + "/" + fecha[:4]
 
 
     def getTime(self, fecha):
@@ -120,6 +130,7 @@ class ChargeDatabase(QRunnable):
         return "N/D"
 
     def getTheGlobalAwayPercentage(self, row):
+
         if row["AW"] + row["AD"]+ row["AL"] != 0:
             return round(row["AD"] / (row["AW"] + row["AD"]+ row["AL"]) * 100, 3)
 

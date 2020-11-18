@@ -1,13 +1,11 @@
 
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt5.QtGui import QPainter, QBrush, QPen
 from PyQt5.QtCore import Qt, pyqtSlot
-import sys
  
  
 class DobleSlider(QWidget):
-    def __init__(self, width, height, rango, interval):
+    def __init__(self, width, height, rango, interval, Label):
         super().__init__()
 
         #tamaño del canas
@@ -17,6 +15,8 @@ class DobleSlider(QWidget):
         self.interval = interval
         self.visualInterval = width/(rango/interval)
         self.threshold = 0.2
+        self.label = Label
+        self.text = self.label.text()
 
         #medidas del handle
         self.handleWidth = self.width/50
@@ -86,7 +86,6 @@ class DobleSlider(QWidget):
                     self.leftPos = self.rightPos -1
                 else:
                     self.leftPos = int(abs(self.initPos-event.x() - self.handleWidth/2)/self.visualInterval)
-                print(self.leftPos)
                 self.leftLeft = self.leftPos * self.visualInterval
                 self.eselleft = False
             elif self.eselRigth:
@@ -98,8 +97,9 @@ class DobleSlider(QWidget):
                     self.rightPos = int(abs(self.initPos-event.x() - self.handleWidth/2)/self.visualInterval)
                 self.rigthLeft = self.rightPos * self.visualInterval
                 self.eselRigth = False
-                
+
             self.initPos = 0
+            self.editText()
 
     def mouseMoveEvent(self, event): 
         if event.buttons() == Qt.LeftButton and self.letsuMove:
@@ -111,4 +111,48 @@ class DobleSlider(QWidget):
                 self.rigthLeft = event.x()-self.handleWidth/2
                 return
 
-            self.paintEvent(self)
+
+    def getBigerThanHandler(self):
+        return round((self.leftPos * self.interval),4)
+
+    def getLessThanHandler(self):
+        if self.rightPos == self.range/self.interval:
+            return 100000000000000
+        return round((self.rightPos * self.interval),4)
+
+
+    def setBigerThanHandler(self, aux):
+        self.leftPos = aux
+        self.leftLeft = self.leftPos * self.visualInterval
+        self.editText()
+
+    def setLessThanHandler(self, aux):
+        self.rightPos = aux
+        self.rigthLeft = self.rightPos * self.visualInterval
+        self.editText()
+    
+    def values(self):
+        return [self.leftPos, self.rightPos]
+
+    def valuesToString(self):
+        return str(round((self.leftPos * self.interval),2)) + "-" + str(round((self.rightPos * self.interval),2))
+
+    def reset(self):
+        self.leftPos = 0
+        self.rightPos = self.range/self.interval
+        self.leftLeft = 0        
+        self.rigthLeft = self.width/50*49
+        self.editText()
+
+    def editText(self):
+        aux = ""
+        numero = 0
+        while self.text[numero] != " ":
+            aux += self.text[numero]
+            numero+=1
+
+        result = self.valuesToString()
+        while len(aux) + len(result) < len(self.text):
+            aux += " "
+
+        self.label.setText(aux + result)

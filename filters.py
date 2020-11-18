@@ -1,13 +1,11 @@
-import pandas as pd
+
 from PyQt5.QtCore import QSize, Qt, QThreadPool, pyqtSignal
 
-from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton, QStyle, QMessageBox,
-                             QMainWindow, QSlider, QWidget, QTableView, QVBoxLayout, 
+from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton, QStyle, QMessageBox, QTableWidgetItem,
+                             QMainWindow, QSlider, QWidget, QTableWidget, QVBoxLayout,
                              QCheckBox, QHBoxLayout, QProgressBar, QGridLayout)
 
 from PyQt5.QtGui import QIcon
-
-from tableModel import TableModel
 from localDatabase import SaveDialog
 from threaded import Orderer, ChargeDatabase
 from dobleSlider import DobleSlider
@@ -31,13 +29,13 @@ class Filters(QMainWindow):
         self.pad         = QLabel("PAD:         0%")
         self.ppghome     = QLabel("PPGHome:      0")
         self.ppgaway     = QLabel("PPGAway:      0")
-        self.tgpg        = QLabel("TGPG:         0")
+        self.tgpg        = QLabel("TGPG:       0-5")
         self.pjhome      = QLabel("PJHome:       0")
         self.pjaway      = QLabel("PJAway:       0")
         self.rempate     = QLabel("REmpate:      0")
-        self.odd1        = QLabel("ODD1:         0")
-        self.odd2        = QLabel("ODD2:         0")
-        self.odd_under25 = QLabel("ODD_UNDER25:  0")
+        self.odd1        = QLabel("ODD1:       0-10")
+        self.odd2        = QLabel("ODD2:       0-10")
+        self.odd_under25 = QLabel("UNDER25:    0-10")
         
         self.aplicar = QPushButton("Aplicar")
         self.save = QPushButton("Save/Load")
@@ -52,15 +50,13 @@ class Filters(QMainWindow):
         self.ptajeBarPAD = QSlider(Qt.Horizontal)
         self.ptajeBarPPGHome = QSlider(Qt.Horizontal)
         self.ptajeBarPPGAway = QSlider(Qt.Horizontal)
-        self.ptajeBarTGPG = QSlider(Qt.Horizontal)
+        self.ptajeBarTGPG = DobleSlider(380, 20, 5, 0.2, self.tgpg)
         self.ptajeBarPJHome = QSlider(Qt.Horizontal)
         self.ptajeBarPJAway = QSlider(Qt.Horizontal)
         self.ptajeBarRempate = QSlider(Qt.Horizontal)
-        self.ptajeBarODD1 = QSlider(Qt.Horizontal)
-        self.ptajeBarODD2 = QSlider(Qt.Horizontal)
-        self.ptajeBarUNDER25 = QSlider(Qt.Horizontal)
-        
-        self.some = DobleSlider(400, 20, 10, 0.2)
+        self.ptajeBarODD1 = DobleSlider(380, 20, 10, 0.2, self.odd1)
+        self.ptajeBarODD2 = DobleSlider(380, 20, 10, 0.2, self.odd2)
+        self.ptajeBarUNDER25 = DobleSlider(380, 20, 10, 0.2, self.odd_under25)
 
         self.progressBar = QProgressBar()
         self.progressBar.hide()
@@ -72,13 +68,9 @@ class Filters(QMainWindow):
         self.ptajeBarPAD.setRange(0, 100)
         self.ptajeBarPPGHome.setRange(0, 10)
         self.ptajeBarPPGAway.setRange(0, 10)
-        self.ptajeBarTGPG.setRange(0, 5)
         self.ptajeBarPJAway.setRange(0, 50)
         self.ptajeBarPJHome.setRange(0, 50)
         self.ptajeBarRempate.setRange(0, 10)
-        self.ptajeBarODD1.setRange(0, 10)
-        self.ptajeBarODD2.setRange(0, 10)
-        self.ptajeBarUNDER25.setRange(0, 10)
 
         #widgets layout2
         self.resultados = QLabel("Resultados")
@@ -91,8 +83,7 @@ class Filters(QMainWindow):
         self.loadData = QPushButton("Load data")
 
         #Tabla
-        self.table = QTableView()
-        self.table.setSortingEnabled(True)
+        self.table = QTableWidget()
         self.table.horizontalHeader().setSectionsClickable(True)
         self.table.setStyleSheet("background-color: rgb(230,235,255)")
 
@@ -101,15 +92,11 @@ class Filters(QMainWindow):
         self.ptajeBarPGAD.valueChanged.connect(self.actualizarPGAD)
         self.ptajeBarPHD.valueChanged.connect(self.actualizarPHD)
         self.ptajeBarPAD.valueChanged.connect(self.actualizarPAD)
-        self.ptajeBarTGPG.valueChanged.connect(self.actualizarTGPG)
         self.ptajeBarPPGAway.valueChanged.connect(self.actualizarPPGAway)
         self.ptajeBarPPGHome.valueChanged.connect(self.actualizarPPGHome)
         self.ptajeBarPJAway.valueChanged.connect(self.actualizarPJAway)
         self.ptajeBarPJHome.valueChanged.connect(self.actualizarPJHome)
         self.ptajeBarRempate.valueChanged.connect(self.actualizarRempate)
-        self.ptajeBarODD1.valueChanged.connect(self.actualizarODD1)
-        self.ptajeBarODD2.valueChanged.connect(self.actualizarODD2)
-        self.ptajeBarUNDER25.valueChanged.connect(self.actualizarUNDER25)
 
         self.aplicar.clicked.connect(self.aplicarResultado)
         self.save.clicked.connect(self.guardarSetts)
@@ -117,13 +104,15 @@ class Filters(QMainWindow):
         self.loadData.clicked.connect(self.loadDatabase)
         self.reset.clicked.connect(self.resetThigs)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
+        self.table.verticalScrollBar().valueChanged.connect(self.printTheProgressBars)
         
         #databases y tal
         self.datos =[]
         self.currentDatos = self.datos
         self.listadeEmpates = []
-        self.headers = ["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
-             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"]
+        self.table.setColumnCount(18)
+        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
+             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
 
         #threads
         self.threadpool = QThreadPool()
@@ -165,8 +154,6 @@ class Filters(QMainWindow):
         topLayout.addWidget(self.ptajeBarUNDER25, 8, 1, 1, 1)
         topLayout.addWidget(self.progressBar, 2, 4, 1, 1)
         topLayout.addWidget(self.reset, 8, 4, 1, 1)
-        
-        topLayout.addWidget(self.some, 9, 1, 1, 1)
   
         midLayout.addWidget(self.resultados, 0, 0, 1, 1)
         midLayout.addWidget(self.ptajeEmpates, 1, 0, 1, 1)
@@ -193,12 +180,6 @@ class Filters(QMainWindow):
     def actualizarPAD(self):
         self.pad.setText("PAD:         {}%".format(self.ptajeBarPAD.value()))
 
-    def actualizarTGPG(self):
-        if self.ptajeBarTGPG.value() >= 10:
-            self.tgpg.setText("TGPG:         {}+".format(self.ptajeBarTGPG.value()))
-        else :
-            self.tgpg.setText("TGPG:         {}".format(self.ptajeBarTGPG.value()))
-
     def actualizarPPGHome(self):
         if self.ptajeBarPPGHome.value() >= 10:
             self.ppghome.setText("PPGHome:      {}+".format(self.ptajeBarPPGHome.value()))
@@ -223,24 +204,6 @@ class Filters(QMainWindow):
             self.pjaway.setText("PJAway:  {}+".format(self.ptajeBarPJAway.value()))
         else:
             self.pjaway.setText("PJAway:   {}".format(self.ptajeBarPJAway.value()))
-
-    def actualizarODD1(self):
-        if self.ptajeBarODD1.value() >= 10:
-            self.odd1.setText("ODD1:        {}+".format(self.ptajeBarODD1.value()))
-        else:
-            self.odd1.setText("ODD1:         {}".format(self.ptajeBarODD1.value()))
-    
-    def actualizarODD2(self):
-        if self.ptajeBarODD2.value() >= 10:
-            self.odd2.setText("ODD2:        {}+".format(self.ptajeBarODD2.value()))
-        else:
-            self.odd2.setText("ODD2:         {}".format(self.ptajeBarODD2.value()))    
-    
-    def actualizarUNDER25(self):
-        if self.ptajeBarUNDER25.value() >= 10:
-            self.odd_under25.setText("ODD_UNDER25: {}+".format(self.ptajeBarUNDER25.value()))
-        else:
-            self.odd_under25.setText("ODD_UNDER25:  {}".format(self.ptajeBarUNDER25.value()))
     
     def actualizarRempate(self):
         if self.ptajeBarRempate.value() >= 10:
@@ -296,7 +259,9 @@ class Filters(QMainWindow):
                 if isIn and not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPAD.value())):
                     isIn = False
 
-                if isIn and not(self.ptajeBarTGPG.value() <= 0 or (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.value())):
+                if isIn and not((self.ptajeBarTGPG.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
+                                 (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.getBigerThanHandler()
+                                 and self.ptajeBarTGPG.getLessThanHandler() >= elemento[9]))):
                     isIn = False
 
                 if isIn and not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
@@ -314,13 +279,19 @@ class Filters(QMainWindow):
                 if isIn and not(self.ptajeBarRempate.value() <= 0 or elemento[14] >= self.ptajeBarRempate.value()):
                     isIn = False
 
-                if isIn and not(self.ptajeBarODD1.value() <= 0 or elemento[15] >= self.ptajeBarODD1.value()):
+                if isIn and not((self.ptajeBarODD1.getBigerThanHandler() <= 0 and (isinstance(elemento[15], str))) or (
+                                 (isinstance(elemento[15], float) and elemento[15] >= self.ptajeBarODD1.getBigerThanHandler()
+                                 and self.ptajeBarODD1.getLessThanHandler() >= elemento[15]))):
                     isIn = False
 
-                if isIn and not(self.ptajeBarODD2.value() <= 0 or elemento[16] >= self.ptajeBarODD2.value()):
+                if isIn and not((self.ptajeBarODD2.getBigerThanHandler() <= 0 and (isinstance(elemento[16], str))) or (
+                                 (isinstance(elemento[16], float) and elemento[16] >= self.ptajeBarODD2.getBigerThanHandler()
+                                 and self.ptajeBarODD2.getLessThanHandler() >= elemento[16]))):
                     isIn = False  
                 
-                if isIn and not(self.ptajeBarUNDER25.value() <= 0 or elemento[17] >= self.ptajeBarUNDER25.value()):
+                if isIn and not((self.ptajeBarUNDER25.getBigerThanHandler() <= 0 and (isinstance(elemento[17], str))) or (
+                                 (isinstance(elemento[17], float) and elemento[17] >= self.ptajeBarUNDER25.getBigerThanHandler()
+                                 and self.ptajeBarUNDER25.getLessThanHandler() >= elemento[17]))):
                     isIn = False
                 
                 if  isIn:
@@ -332,9 +303,29 @@ class Filters(QMainWindow):
             self.progressBar.hide()
             self.getActualEmpates()
             self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
-            self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
-            self.model = TableModel(self.data, self.listadeEmpates)
-            self.table.setModel(self.model)
+            self.table.clear()
+            self.table.setRowCount(len(self.currentDatos))
+            self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
+             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
+            fila = 0
+            for row in self.currentDatos:
+                self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
+                self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
+                self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
+                self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+                self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
+                self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
+                self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
+                self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
+                self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
+                self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
+                self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
+                self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
+                self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
+                self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+                fila +=1
+                
+            self.printTheProgressBars()
         else:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Warning)
@@ -357,10 +348,28 @@ class Filters(QMainWindow):
     def endBar(self):
         self.progressBar.hide()
         self.getActualEmpates()
-        self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
-        self.model = TableModel(self.data, self.listadeEmpates)
-        self.table.setModel(self.model)
-        self.getActualEmpates()
+        self.table.clear()
+        self.table.setRowCount(len(self.currentDatos))
+        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
+            "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
+        fila = 0
+        for row in self.currentDatos:
+            self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
+            self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
+            self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
+            self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+            self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
+            self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
+            self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
+            self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
+            self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
+            self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
+            self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
+            self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
+            self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
+            self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+            fila +=1
+        self.printTheProgressBars()
 
     def guardarSetts(self):
         dlg = SaveDialog(self)
@@ -381,14 +390,71 @@ class Filters(QMainWindow):
     def loadedData(self, data):
         self.datos = data
         self.currentDatos = self.datos
-        self.getActualEmpates()
-        self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
-        self.partidos.setText(str(len(self.currentDatos))+ "Partidos")
-        self.model = TableModel(self.data, self.listadeEmpates)
-        self.table.setModel(self.model)
+        self.table.setRowCount(len(self.currentDatos))
+        fila = 0
+        for row in self.currentDatos:
+            self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
+            self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
+            self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
+            self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+            self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
+            self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
+            self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
+            self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
+            self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
+            self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
+            self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
+            self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
+            self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
+            self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
 
+            fila += 1
+            if(fila%100 == 0):
+                self.update_progress(int(fila/len(self.datos) * 50 +50))
+
+        self.printTheProgressBars()
         self.progressBar.hide()
         self.loadData.setText("Load data")
+        self.getActualEmpates()
+        self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
+
+
+    def printTheProgressBars(self):
+        fila = self.table.rowAt(0)
+        while fila >= 0 and fila < len(self.currentDatos) and fila <= self.table.rowAt(self.table.height()) +1 :   
+            if isinstance(self.currentDatos[fila][5], float):
+                bar1 = QProgressBar()
+                bar1.setTextVisible(True)
+                bar1.setValue(self.currentDatos[fila][5])
+                self.table.setCellWidget(fila, 5, bar1)
+            else:
+                self.table.setItem(fila, 5,QTableWidgetItem(self.currentDatos[fila][5]))
+            
+            if isinstance(self.currentDatos[fila][4], float):
+                bar1 = QProgressBar()
+                bar1.setTextVisible(True)
+                bar1.setValue(self.currentDatos[fila][4])
+                self.table.setCellWidget(fila, 4, bar1)
+            else:
+                self.table.setItem(fila, 4, QTableWidgetItem(self.currentDatos[fila][4]))
+
+            if isinstance(self.currentDatos[fila][6], float):
+                bar1 = QProgressBar()
+                bar1.setTextVisible(True)
+                bar1.setValue(self.currentDatos[fila][6])
+                self.table.setCellWidget(fila, 6, bar1)
+            else:
+                self.table.setItem(fila, 6, QTableWidgetItem(self.currentDatos[fila][6]))
+                
+            if isinstance(self.currentDatos[fila][7], float):
+                bar1 = QProgressBar()
+                bar1.setTextVisible(True)
+                bar1.setValue(self.currentDatos[fila][7])
+                self.table.setCellWidget(fila, 7, bar1)
+            else:
+                self.table.setItem(fila, 7, QTableWidgetItem(self.currentDatos[fila][7]))
+
+            fila +=1
 
 
     def conectarConNextTabla(self):
@@ -398,13 +464,13 @@ class Filters(QMainWindow):
                 self.ptajeBarPAD.value(),
                 self.ptajeBarPPGHome.value(),
                 self.ptajeBarPPGAway.value(),
-                self.ptajeBarTGPG.value(),
+                self.ptajeBarTGPG.values(),
                 self.ptajeBarPJHome.value(),
                 self.ptajeBarPJAway.value(),
                 self.ptajeBarRempate.value(),
-                self.ptajeBarODD1.value(),
-                self.ptajeBarODD2.value(),
-                self.ptajeBarUNDER25.value()
+                self.ptajeBarODD1.values(),
+                self.ptajeBarODD2.values(),
+                self.ptajeBarUNDER25.values()
                 ]
         self.filterValues.emit(data)
 
@@ -415,13 +481,17 @@ class Filters(QMainWindow):
         self.ptajeBarPAD.setValue(esta[3])
         self.ptajeBarPPGHome.setValue(esta[4])
         self.ptajeBarPPGAway.setValue(esta[5])
-        self.ptajeBarTGPG.setValue(esta[6])
+        self.ptajeBarTGPG.setBigerThanHandler(esta[6][0])
+        self.ptajeBarTGPG.setLessThanHandler(esta[6][1])
         self.ptajeBarPJHome.setValue(esta[7])
         self.ptajeBarPJAway.setValue(esta[8])
         self.ptajeBarRempate.setValue(esta[9])
-        self.ptajeBarODD1.setValue(esta[10])
-        self.ptajeBarODD2.setValue(esta[11])
-        self.ptajeBarUNDER25.setValue(esta[12])
+        self.ptajeBarODD1.setBigerThanHandler(esta[10][0])
+        self.ptajeBarODD1.setLessThanHandler(esta[10][1])
+        self.ptajeBarODD2.setBigerThanHandler(esta[11][0])
+        self.ptajeBarODD2.setLessThanHandler(esta[11][1])
+        self.ptajeBarUNDER25.setBigerThanHandler(esta[12][0])
+        self.ptajeBarUNDER25.setLessThanHandler(esta[12][1])
 
     def resetThigs(self):
         self.ptajeBarPGHD.setValue(0)
@@ -430,10 +500,10 @@ class Filters(QMainWindow):
         self.ptajeBarPAD.setValue(0)
         self.ptajeBarPPGHome.setValue(0)
         self.ptajeBarPPGAway.setValue(0)
-        self.ptajeBarTGPG.setValue(0)
+        self.ptajeBarTGPG.reset()
         self.ptajeBarPJHome.setValue(0)
         self.ptajeBarPJAway.setValue(0)
         self.ptajeBarRempate.setValue(0)
-        self.ptajeBarODD1.setValue(0)
-        self.ptajeBarODD2.setValue(0)
-        self.ptajeBarUNDER25.setValue(0)
+        self.ptajeBarODD1.reset()
+        self.ptajeBarODD2.reset()
+        self.ptajeBarUNDER25.reset()
