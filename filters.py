@@ -21,6 +21,8 @@ class Filters(QMainWindow):
         globalWidgets.setWindowTitle("Backtesting")
         #widgets layout1
         self.setStyleSheet("background-color: rgb(200,215,240)")
+
+
         self.filtros = QLabel("Filtros")
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.pghd        = QLabel("PGHD:        0%")
@@ -75,6 +77,8 @@ class Filters(QMainWindow):
         #widgets layout2
         self.resultados = QLabel("Resultados")
         self.resultados.setStyleSheet("font-size: 16px; font-weight: bold;")
+        
+        
         self.ptajeEmpates = QLabel("% de Empates")
         self.empates = QLabel("0 Empates")
         self.partidos = QLabel("0 Partidos")
@@ -426,6 +430,7 @@ class Filters(QMainWindow):
                 bar1 = QProgressBar()
                 bar1.setTextVisible(True)
                 bar1.setValue(self.currentDatos[fila][5])
+                bar1.setAlignment(Qt.AlignCenter)
                 self.table.setCellWidget(fila, 5, bar1)
             else:
                 self.table.setItem(fila, 5,QTableWidgetItem(self.currentDatos[fila][5]))
@@ -434,6 +439,7 @@ class Filters(QMainWindow):
                 bar1 = QProgressBar()
                 bar1.setTextVisible(True)
                 bar1.setValue(self.currentDatos[fila][4])
+                bar1.setAlignment(Qt.AlignCenter)
                 self.table.setCellWidget(fila, 4, bar1)
             else:
                 self.table.setItem(fila, 4, QTableWidgetItem(self.currentDatos[fila][4]))
@@ -442,6 +448,7 @@ class Filters(QMainWindow):
                 bar1 = QProgressBar()
                 bar1.setTextVisible(True)
                 bar1.setValue(self.currentDatos[fila][6])
+                bar1.setAlignment(Qt.AlignCenter)
                 self.table.setCellWidget(fila, 6, bar1)
             else:
                 self.table.setItem(fila, 6, QTableWidgetItem(self.currentDatos[fila][6]))
@@ -450,6 +457,8 @@ class Filters(QMainWindow):
                 bar1 = QProgressBar()
                 bar1.setTextVisible(True)
                 bar1.setValue(self.currentDatos[fila][7])
+                bar1.setAlignment(Qt.AlignCenter)
+                bar1.setStyleSheet( "QProgressBar::chunk {background-color: #40dd50; }")
                 self.table.setCellWidget(fila, 7, bar1)
             else:
                 self.table.setItem(fila, 7, QTableWidgetItem(self.currentDatos[fila][7]))
