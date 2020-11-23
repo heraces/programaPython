@@ -213,8 +213,7 @@ class SaveDialog(QDialog):
             if ok and text != "":
                 try:
                     saveit = True
-                    data = {}
-                    with open('svdStngs.json', "r") as json_file:
+                    with open("svdStngs.json") as json_file:
                         data = json.load(json_file)
                         for d in data:
                             if d == text:
@@ -242,7 +241,26 @@ class SaveDialog(QDialog):
 
     def setsavedBars(self):
         if len(self.listProfiles.selectedItems()) >= 1:
-            self.ssavedData.setText("Saved data: {}".format(self.listProfiles.currentItem().text()))
+            with open('svdStngs.json', "r") as json_file:
+                data = json.load(json_file)
+                self.ssavedData.setText("Saved data: {}".format(self.listProfiles.currentItem().text()))
+                self.spghdValue.setText(str(data[self.listProfiles.currentItem().text()]["PGHD"]))
+                self.spgadValue.setText(str(data[self.listProfiles.currentItem().text()]["PGAD"]))
+                self.sphdValue.setText(str(data[self.listProfiles.currentItem().text()]["PHD"]))
+                self.spadValue.setText(str(data[self.listProfiles.currentItem().text()]["PAD"]))
+                self.stgpgValue.setText(str(data[self.listProfiles.currentItem().text()]["TGPG"][0]/10) + "-" + 
+                                                    str(data[self.listProfiles.currentItem().text()]["TGPG"][1]/10))
+                self.sppgawayValue.setText(str(data[self.listProfiles.currentItem().text()]["PPGHome"]))
+                self.sppghomeValue.setText(str(data[self.listProfiles.currentItem().text()]["PPGAway"]))
+                self.spjhomeValue.setText(str(data[self.listProfiles.currentItem().text()]["PJHome"]))
+                self.spjawayValue.setText(str(data[self.listProfiles.currentItem().text()]["PJAway"]))
+                self.srempateValue.setText(str(data[self.listProfiles.currentItem().text()]["REmpate"]))
+                self.sodd1Value.setText(str(data[self.listProfiles.currentItem().text()]["ODDS1"][0]/10)+ "-" + 
+                                                    str(data[self.listProfiles.currentItem().text()]["ODDS1"][1]/10))
+                self.sodd2Value.setText(str(data[self.listProfiles.currentItem().text()]["ODDS2"][0]/10)+ "-" + 
+                                                    str(data[self.listProfiles.currentItem().text()]["ODDS2"][1]/10))
+                self.sodd_under25Value.setText(str(data[self.listProfiles.currentItem().text()]["ODDS_UNDER25"][0]/10)+ "-" + 
+                                                    str(data[self.listProfiles.currentItem().text()]["ODDS_UNDER25"][1]/10))
        
     def actualizarLista(self):    
         with open('svdStngs.json', "r") as json_file:
@@ -265,15 +283,15 @@ class SaveDialog(QDialog):
                                                             "PGAD" : self.maninWindow.ptajeBarPGAD.value(),
                                                             "PHD" : self.maninWindow.ptajeBarPHD.value(),
                                                             "PAD" : self.maninWindow.ptajeBarPAD.value(),
-                                                            "TGPG" : self.maninWindow.ptajeBarTGPG.value(), 
+                                                            "TGPG" : self.maninWindow.ptajeBarODD1.values(), 
                                                             "PPGHome" : self.maninWindow.ptajeBarPPGHome.value(),
                                                             "PPGAway" : self.maninWindow.ptajeBarPPGAway.value(),
                                                             "PJHome" : self.maninWindow.ptajeBarPJHome.value(),
                                                             "PJAway" : self.maninWindow.ptajeBarPJAway.value(),
                                                             "REmpate" : self.maninWindow.ptajeBarRempate.value(),
-                                                            "ODDS1" : self.maninWindow.ptajeBarODD1.value(),
-                                                            "ODDS2" : self.maninWindow.ptajeBarODD2.value(),
-                                                            "ODDS_UNDER25" : self.maninWindow.ptajeBarUNDER25.value()
+                                                            "ODDS1" : self.maninWindow.ptajeBarODD1.values(),
+                                                            "ODDS2" : self.maninWindow.ptajeBarODD2.values(),
+                                                            "ODDS_UNDER25" : self.maninWindow.ptajeBarUNDER25.values()
                                                             }
 
             with open('svdStngs.json', "w") as json_file:
@@ -286,20 +304,25 @@ class SaveDialog(QDialog):
             with open('svdStngs.json', "r") as json_file:
                 data = json.load(json_file)
 
-                self.maninWindow.ptajeBarPGHD.setValue(data[self.listProfiles.currentItem().text()]["PGHD"])
-                self.maninWindow.ptajeBarPGAD.setValue(data[self.listProfiles.currentItem().text()]["PGAD"])
-                self.maninWindow.ptajeBarPHD.setValue(data[self.listProfiles.currentItem().text()]["PHD"])
-                self.maninWindow.ptajeBarPAD.setValue(data[self.listProfiles.currentItem().text()]["PAD"])
-                self.maninWindow.ptajeBarTGPG.setValue(data[self.listProfiles.currentItem().text()]["TGPG"])
-                self.maninWindow.ptajeBarPPGHome.setValue(data[self.listProfiles.currentItem().text()]["PPGHome"])
-                self.maninWindow.ptajeBarPPGAway.setValue(data[self.listProfiles.currentItem().text()]["PPGAway"])
-                self.maninWindow.ptajeBarPJHome.setValue(data[self.listProfiles.currentItem().text()]["PJHome"])
-                self.maninWindow.ptajeBarPJAway.setValue(data[self.listProfiles.currentItem().text()]["PJAway"])
-                self.maninWindow.ptajeBarRempate.setValue(data[self.listProfiles.currentItem().text()]["REmpate"])
-                self.maninWindow.ptajeBarODD1.setValue(data[self.listProfiles.currentItem().text()]["ODDS1"])
-                self.maninWindow.ptajeBarODD2.setValue(data[self.listProfiles.currentItem().text()]["ODDS2"])
-                self.maninWindow.ptajeBarUNDER25.setValue(data[self.listProfiles.currentItem().text()]["ODDS_UNDER25"])
+                self.maninWindow.ptajeBarPGHD.setValue(data[self.listProfiles.selectedItems()[0].text()]["PGHD"])
+                self.maninWindow.ptajeBarPGAD.setValue(data[self.listProfiles.selectedItems()[0].text()]["PGAD"])
+                self.maninWindow.ptajeBarPHD.setValue(data[self.listProfiles.selectedItems()[0].text()]["PHD"])
+                self.maninWindow.ptajeBarPAD.setValue(data[self.listProfiles.selectedItems()[0].text()]["PAD"])
+                self.maninWindow.ptajeBarPPGHome.setValue(data[self.listProfiles.selectedItems()[0].text()]["PPGHome"])
+                self.maninWindow.ptajeBarPPGAway.setValue(data[self.listProfiles.selectedItems()[0].text()]["PPGAway"])
+                self.maninWindow.ptajeBarPJHome.setValue(data[self.listProfiles.selectedItems()[0].text()]["PJHome"])
+                self.maninWindow.ptajeBarPJAway.setValue(data[self.listProfiles.selectedItems()[0].text()]["PJAway"])
+                self.maninWindow.ptajeBarRempate.setValue(data[self.listProfiles.selectedItems()[0].text()]["REmpate"])
+
                 
-            self.setCurrentBars()
+                self.maninWindow.ptajeBarTGPG.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["TGPG"][0])
+                self.maninWindow.ptajeBarTGPG.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["TGPG"][1])
+                self.maninWindow.ptajeBarODD1.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["ODDS1"][0])
+                self.maninWindow.ptajeBarODD1.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["ODDS1"][1])
+                self.maninWindow.ptajeBarODD2.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["ODDS2"][0])
+                self.maninWindow.ptajeBarODD2.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["ODDS2"][1])
+                self.maninWindow.ptajeBarUNDER25.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["ODDS_UNDER25"][0])
+                self.maninWindow.ptajeBarUNDER25.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["ODDS_UNDER25"][1])
+                
             self.maninWindow.aplicarResultado()
             self.close()

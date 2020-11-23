@@ -1,16 +1,26 @@
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, QThreadPool
 from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QProgressBar, QMessageBox,
-                             QMainWindow, QSlider, QWidget, QTableView, 
+                             QMainWindow, QSlider, QWidget, QTableWidget, QTableWidgetItem,
                              QVBoxLayout, QCheckBox, QHBoxLayout, QGridLayout)
                                                           
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QColor
 from threaded import Orderer, ChargeDatabase
 from localDatabase import SaveDialog
-import pandas as pd
 from dobleSlider import DobleSlider
 
 class Predictions(QMainWindow):
     testingValues = pyqtSignal(list)
+    style1 =  """QProgressBar {background-color: rgb(200, 255, 240);
+                           border-style: outset;
+                           border-width: 2px;
+                           border-color: #74c8ff;
+                           border-radius: 9px;
+                           border-width: 2px;} 
+                           QProgressBar::chunk:horizontal{ background: rgb(20,230,40);
+                           border-radius: 9px;}"""
+
+    max_list = [0,0,0,0, 100,100,100,100, 0, 5, 10, 10, 50, 50, 10, 10,10,10]
+
     def __init__(self):
         super().__init__()
         
@@ -83,7 +93,7 @@ class Predictions(QMainWindow):
         self.loadData = QPushButton("Load Data")
 
         #Tabla
-        self.table = QTableView()
+        self.table = QTableWidget()
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setSectionsClickable(True)
         self.table.setStyleSheet("background-color: rgb(255,235,230)")
@@ -92,8 +102,9 @@ class Predictions(QMainWindow):
         self.datos =[]
         self.currentDatos = self.datos
         self.listadeEmpates = []
-        self.headers = ["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
-             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"]
+        self.table.setColumnCount(18)
+        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
+             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
 
         #threads
         self.threadpool = QThreadPool()
@@ -112,6 +123,7 @@ class Predictions(QMainWindow):
         self.save.clicked.connect(self.guardarSetts)
         self.binding.clicked.connect(self.conectarConTablaAnterior)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
+        self.table.verticalScrollBar().valueChanged.connect(self.printTheProgressBars)
         self.loadData.clicked.connect(self.loadDatabase)
         self.aplicar.clicked.connect(self.aplicarResultado)
         self.reset.clicked.connect(self.resetThigs)
@@ -225,10 +237,34 @@ class Predictions(QMainWindow):
         self.progressBar.setValue(progress)
 
     def endBar(self):
+        self.table.setRowCount(len(self.currentDatos))
         self.progressBar.hide()
         self.getActualEmpates()
-        self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
-        self.getActualEmpates()
+        self.table.clear()
+        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
+            "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
+        fila = 0
+        for row in self.currentDatos:
+            self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
+            self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
+            self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
+            self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+            self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
+            self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
+            self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
+            self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
+            self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
+            self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
+            self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
+            self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
+            self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
+            self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
+            self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
+            self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
+            self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
+            self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+            fila +=1
+        self.printTheProgressBars()
 
     def guardarSetts(self):
         dlg = SaveDialog(self)
@@ -275,27 +311,35 @@ class Predictions(QMainWindow):
     def getActualEmpates(self): 
         self.empatesNum = 0
         self.listadeEmpates = []
-        for currentDato in self.currentDatos:
-            if currentDato[8] != "N/D":
+        row = 0
+        while row < self.table.rowCount():
+            if self.currentDatos[row][8] != "N/D":
                 string1 = ""
-                resultado = currentDato[8]
+                resultado = self.currentDatos[row][8]
                 indice = 0
                 while indice < len(resultado) and resultado[indice] != "-":
                     string1 = string1 + resultado[indice]
                     indice+=1
 
                 if indice < len(resultado) and string1[:-1] == resultado[indice+2:]:
-                    self.empatesNum +=1
+                        
                     self.listadeEmpates.append(1)
+                    self.empatesNum += 1
                 else:
+
                     self.listadeEmpates.append(2)
-            
             else:
+                
                 self.listadeEmpates.append(0)
+
+            row +=1
 
         self.empates.setText(str(self.empatesNum) + " Empates")
         if(len(self.currentDatos) != 0):
             self.ptajeEmpates.setText(str(round(self.empatesNum/len(self.currentDatos) * 100, 2)) + "% de Empates")
+        
+        self.printTheProgressBars()
+
 
             
     def loadDatabase(self):
@@ -312,12 +356,56 @@ class Predictions(QMainWindow):
     def loadedData(self, data):
         self.datos = data
         self.currentDatos = self.datos
-        self.getActualEmpates()
-        self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
-        self.partidos.setText(str(len(self.currentDatos))+ "Partidos")
+        self.table.setRowCount(len(self.currentDatos))
+        fila = 0
+        for row in self.currentDatos:
+            self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
+            self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
+            self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
+            self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+            self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
+            self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
+            self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
+            self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
+            self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
+            self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
+            self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
+            self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
+            self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
+            self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
+            self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
+            self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
+            self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
+            self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+
+            fila += 1
+            if(fila%100 == 0):
+                self.update_progress(int(fila/len(self.datos) * 50 +50))
 
         self.progressBar.hide()
         self.loadData.setText("Load data")
+        self.getActualEmpates()
+        self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
+
+
+    def printTheProgressBars(self):
+
+        fila = self.table.rowAt(0)
+        while fila >= 0 and fila < len(self.currentDatos) and fila < self.table.rowAt(self.table.height()):   
+            for col in range( self.table.columnCount()):
+                if isinstance(self.currentDatos[fila][col], float) or isinstance(self.currentDatos[fila][col], int):
+                    bar1 = QProgressBar()
+                    bar1.setTextVisible(True)
+                    bar1.setMaximum(self.max_list[col])
+                    if(self.currentDatos[fila][col] > bar1.maximum()):
+                        bar1.setMaximum(self.currentDatos[fila][col])
+                    bar1.setValue(self.currentDatos[fila][col])
+                    bar1.setFormat(str(self.currentDatos[fila][col]) + "/" + str(self.max_list[col]))
+                    bar1.setAlignment(Qt.AlignCenter)
+                    self.table.setCellWidget(fila, col, bar1)
+                    bar1.setStyleSheet(self.style1)
+
+            fila +=1
 
 
 
@@ -344,7 +432,9 @@ class Predictions(QMainWindow):
                 if isIn and not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPAD.value())):
                     isIn = False
 
-                if isIn and not(self.ptajeBarTGPG.value() <= 0 or (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.value())):
+                if isIn and not((self.ptajeBarTGPG.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
+                                 (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.getBigerThanHandler()
+                                 and self.ptajeBarTGPG.getLessThanHandler() >= elemento[9]))):
                     isIn = False
 
                 if isIn and not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
@@ -362,13 +452,19 @@ class Predictions(QMainWindow):
                 if isIn and not(self.ptajeBarRempate.value() <= 0 or elemento[14] >= self.ptajeBarRempate.value()):
                     isIn = False
 
-                if isIn and not(self.ptajeBarODD1.value() <= 0 or elemento[15] >= self.ptajeBarODD1.value()):
+                if isIn and not((self.ptajeBarODD1.getBigerThanHandler() <= 0 and (isinstance(elemento[15], str))) or (
+                                 (isinstance(elemento[15], float) and elemento[15] >= self.ptajeBarODD1.getBigerThanHandler()
+                                 and self.ptajeBarODD1.getLessThanHandler() >= elemento[15]))):
                     isIn = False
 
-                if isIn and not(self.ptajeBarODD2.value() <= 0 or elemento[16] >= self.ptajeBarODD2.value()):
+                if isIn and not((self.ptajeBarODD2.getBigerThanHandler() <= 0 and (isinstance(elemento[16], str))) or (
+                                 (isinstance(elemento[16], float) and elemento[16] >= self.ptajeBarODD2.getBigerThanHandler()
+                                 and self.ptajeBarODD2.getLessThanHandler() >= elemento[16]))):
                     isIn = False  
                 
-                if isIn and not(self.ptajeBarUNDER25.value() <= 0 or elemento[17] >= self.ptajeBarUNDER25.value()):
+                if isIn and not((self.ptajeBarUNDER25.getBigerThanHandler() <= 0 and (isinstance(elemento[17], str))) or (
+                                 (isinstance(elemento[17], float) and elemento[17] >= self.ptajeBarUNDER25.getBigerThanHandler()
+                                 and self.ptajeBarUNDER25.getLessThanHandler() >= elemento[17]))):
                     isIn = False
                 
                 if  isIn:
@@ -378,9 +474,36 @@ class Predictions(QMainWindow):
                     self.progressBar.setValue(contador/len(self.datos))
                 
             self.progressBar.hide()
-            self.getActualEmpates()
             self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
-            self.data = pd.DataFrame(self.currentDatos, columns= self.headers) 
+            self.table.clear()
+            self.table.setRowCount(len(self.currentDatos))
+            self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD %", "PGAD %", "PHD %", "PAD %",
+             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
+            fila = 0
+            for row in self.currentDatos:
+                self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
+                self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
+                self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
+                self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+                self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
+                self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
+                self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
+                self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
+                self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
+                self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
+                self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
+                self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
+                self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
+                self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
+                self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
+                self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
+                self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
+                self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+                fila +=1
+                
+                
+            self.getActualEmpates()
+            self.printTheProgressBars()
         else:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Warning)

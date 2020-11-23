@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton, QStyle, QMessageBox
                              QMainWindow, QSlider, QWidget, QTableWidget, QVBoxLayout,
                              QCheckBox, QHBoxLayout, QProgressBar, QGridLayout)
 
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QColor
 from localDatabase import SaveDialog
 from threaded import Orderer, ChargeDatabase
 from dobleSlider import DobleSlider
@@ -13,6 +13,24 @@ from dobleSlider import DobleSlider
 
 class Filters(QMainWindow):
     filterValues = pyqtSignal(list)
+    style1 =  """QProgressBar {background-color: rgb(200, 255, 240);
+                           border-style: outset;
+                           border-width: 2px;
+                           border-color: #74c8ff;
+                           border-radius: 9px;
+                           border-width: 2px;} 
+                           QProgressBar::chunk:horizontal{ background: rgb(20,230,40);
+                           border-radius: 9px;}"""
+    style2 = """QProgressBar {background-color: rgb(255, 230, 200);
+                           border-style: outset;
+                           border-width: 2px;
+                           border-color: #74c8ff;
+                           border-radius: 9px;
+                           border-width: 2px;}
+                           QProgressBar::chunk:horizontal{ background: rgb(240,60,40); 
+                           border-radius: 9px;}"""
+
+    max_list = [0,0,0,0, 100,100,100,100, 0, 5, 10, 10, 50, 50, 10, 10,10,10]
 
     def __init__(self):
         super().__init__()
@@ -219,27 +237,34 @@ class Filters(QMainWindow):
     def getActualEmpates(self): 
         self.empatesNum = 0
         self.listadeEmpates = []
-        for currentDato in self.currentDatos:
-            if currentDato[8] != "N/D":
+        row = 0
+        while row < self.table.rowCount():
+            if self.currentDatos[row][8] != "N/D":
                 string1 = ""
-                resultado = currentDato[8]
+                resultado = self.currentDatos[row][8]
                 indice = 0
                 while indice < len(resultado) and resultado[indice] != "-":
                     string1 = string1 + resultado[indice]
                     indice+=1
 
                 if indice < len(resultado) and string1[:-1] == resultado[indice+2:]:
-                    self.empatesNum +=1
+                        
                     self.listadeEmpates.append(1)
+                    self.empatesNum += 1
                 else:
+
                     self.listadeEmpates.append(2)
-            
             else:
+                
                 self.listadeEmpates.append(0)
+
+            row +=1
 
         self.empates.setText(str(self.empatesNum) + " Empates")
         if(len(self.currentDatos) != 0):
             self.ptajeEmpates.setText(str(round(self.empatesNum/len(self.currentDatos) * 100, 2)) + "% de Empates")
+        
+        self.printTheProgressBars()
 
     def aplicarResultado(self):
         if(len(self.datos) > 0):
@@ -305,11 +330,10 @@ class Filters(QMainWindow):
                     self.progressBar.setValue(contador/len(self.datos))
                 
             self.progressBar.hide()
-            self.getActualEmpates()
             self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
             self.table.clear()
             self.table.setRowCount(len(self.currentDatos))
-            self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
+            self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD %", "PGAD %", "PHD %", "PAD %",
              "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
             fila = 0
             for row in self.currentDatos:
@@ -317,6 +341,10 @@ class Filters(QMainWindow):
                 self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
                 self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
                 self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+                self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
+                self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
+                self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
+                self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
                 self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
                 self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
                 self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
@@ -329,6 +357,8 @@ class Filters(QMainWindow):
                 self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
                 fila +=1
                 
+                
+            self.getActualEmpates()
             self.printTheProgressBars()
         else:
             msg = QMessageBox()
@@ -350,10 +380,10 @@ class Filters(QMainWindow):
         self.progressBar.setValue(progress)
 
     def endBar(self):
+        self.table.setRowCount(len(self.currentDatos))
         self.progressBar.hide()
         self.getActualEmpates()
         self.table.clear()
-        self.table.setRowCount(len(self.currentDatos))
         self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
         fila = 0
@@ -362,6 +392,10 @@ class Filters(QMainWindow):
             self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
             self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
             self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+            self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
+            self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
+            self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
+            self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
             self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
             self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
             self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
@@ -401,6 +435,10 @@ class Filters(QMainWindow):
             self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
             self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
             self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+            self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
+            self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
+            self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
+            self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
             self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
             self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
             self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
@@ -416,7 +454,6 @@ class Filters(QMainWindow):
             if(fila%100 == 0):
                 self.update_progress(int(fila/len(self.datos) * 50 +50))
 
-        self.printTheProgressBars()
         self.progressBar.hide()
         self.loadData.setText("Load data")
         self.getActualEmpates()
@@ -424,44 +461,31 @@ class Filters(QMainWindow):
 
 
     def printTheProgressBars(self):
-        fila = self.table.rowAt(0)
-        while fila >= 0 and fila < len(self.currentDatos) and fila <= self.table.rowAt(self.table.height()) +1 :   
-            if isinstance(self.currentDatos[fila][5], float):
-                bar1 = QProgressBar()
-                bar1.setTextVisible(True)
-                bar1.setValue(self.currentDatos[fila][5])
-                bar1.setAlignment(Qt.AlignCenter)
-                self.table.setCellWidget(fila, 5, bar1)
-            else:
-                self.table.setItem(fila, 5,QTableWidgetItem(self.currentDatos[fila][5]))
-            
-            if isinstance(self.currentDatos[fila][4], float):
-                bar1 = QProgressBar()
-                bar1.setTextVisible(True)
-                bar1.setValue(self.currentDatos[fila][4])
-                bar1.setAlignment(Qt.AlignCenter)
-                self.table.setCellWidget(fila, 4, bar1)
-            else:
-                self.table.setItem(fila, 4, QTableWidgetItem(self.currentDatos[fila][4]))
 
-            if isinstance(self.currentDatos[fila][6], float):
-                bar1 = QProgressBar()
-                bar1.setTextVisible(True)
-                bar1.setValue(self.currentDatos[fila][6])
-                bar1.setAlignment(Qt.AlignCenter)
-                self.table.setCellWidget(fila, 6, bar1)
-            else:
-                self.table.setItem(fila, 6, QTableWidgetItem(self.currentDatos[fila][6]))
-                
-            if isinstance(self.currentDatos[fila][7], float):
-                bar1 = QProgressBar()
-                bar1.setTextVisible(True)
-                bar1.setValue(self.currentDatos[fila][7])
-                bar1.setAlignment(Qt.AlignCenter)
-                bar1.setStyleSheet( "QProgressBar::chunk {background-color: #40dd50; }")
-                self.table.setCellWidget(fila, 7, bar1)
-            else:
-                self.table.setItem(fila, 7, QTableWidgetItem(self.currentDatos[fila][7]))
+        fila = self.table.rowAt(0)
+        while fila >= 0 and fila < len(self.currentDatos) and fila <= self.table.rowAt(self.table.height()):   
+            if self.listadeEmpates[fila] == 1:
+                for count in range(self.table.columnCount()):
+                    self.table.item(fila, count).setBackground(QColor("#50F570"))
+            elif self.listadeEmpates[fila] == 2:
+                for count in range(self.table.columnCount()):
+                    self.table.item(fila, count).setBackground(QColor("#fa7050"))
+
+            for col in range( self.table.columnCount()):
+                if isinstance(self.currentDatos[fila][col], float) or isinstance(self.currentDatos[fila][col], int):
+                    bar1 = QProgressBar()
+                    bar1.setTextVisible(True)
+                    bar1.setMaximum(self.max_list[col])
+                    if(self.currentDatos[fila][col] > bar1.maximum()):
+                        bar1.setMaximum(self.currentDatos[fila][col])
+                    bar1.setValue(self.currentDatos[fila][col])
+                    bar1.setFormat(str(self.currentDatos[fila][col]) + "/" + str(self.max_list[col]))
+                    bar1.setAlignment(Qt.AlignCenter)
+                    self.table.setCellWidget(fila, col, bar1)
+                    if self.listadeEmpates[fila] == 1:
+                        bar1.setStyleSheet(self.style1)
+                    elif self.listadeEmpates[fila] == 2:
+                        bar1.setStyleSheet(self.style2)
 
             fila +=1
 
