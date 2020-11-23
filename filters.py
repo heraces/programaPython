@@ -1,18 +1,27 @@
 
 from PyQt5.QtCore import QSize, Qt, QThreadPool, pyqtSignal
 
-from PyQt5.QtWidgets import (QLineEdit, QLabel, QPushButton, QStyle, QMessageBox, QTableWidgetItem,
+from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QMessageBox, QTableWidgetItem,
                              QMainWindow, QSlider, QWidget, QTableWidget, QVBoxLayout,
-                             QCheckBox, QHBoxLayout, QProgressBar, QGridLayout)
+                             QProgressBar, QGridLayout)
 
-from PyQt5.QtGui import QIcon, QColor
+from PyQt5.QtGui import QColor
 from localDatabase import SaveDialog
 from threaded import Orderer, ChargeDatabase
 from dobleSlider import DobleSlider
+import time
+from datetime import datetime, timedelta, date
 
 
 class Filters(QMainWindow):
     filterValues = pyqtSignal(list)
+    sfecha = (datetime.today()+timedelta(days=1)).strftime('%Y%m%d')
+    chargestring = """SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
+                        HW, HD, HL, AW, AD, AL, GOALSGH, GOALSGA, GOALCGH, GOALCGA, REH, REA, REHH, REAA, HHW, HHD, HHL, 
+                        AAW, AAL, AAD FROM FIXTURES WHERE FTHG != -1 AND FTAG != -1 and DATE <"""
+    chargestring += sfecha
+
+    #como se ven las progressBar
     style1 =  """QProgressBar {background-color: rgb(200, 255, 240);
                            border-style: outset;
                            border-width: 2px;
@@ -29,18 +38,17 @@ class Filters(QMainWindow):
                            border-width: 2px;}
                            QProgressBar::chunk:horizontal{ background: rgb(240,60,40); 
                            border-radius: 9px;}"""
-
-    max_list = [0,0,0,0, 100,100,100,100, 0, 5, 10, 10, 50, 50, 10, 10,10,10]
+    #tamaño maximo de cada progressbar
+    max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 10, 10, 50, 50, 10, 10, 10, 10, 10, 10,10,10]
 
     def __init__(self):
         super().__init__()
         #creates widgets
         globalWidgets = QWidget()
         globalWidgets.setWindowTitle("Backtesting")
-        #widgets layout1
         self.setStyleSheet("background-color: rgb(200,215,240)")
 
-
+        #widgets layout1
         self.filtros = QLabel("Filtros")
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.pghd        = QLabel("PGHD:        0%")
@@ -102,12 +110,15 @@ class Filters(QMainWindow):
         self.partidos = QLabel("0 Partidos")
         self.empatesNum = 0
         
-        self.loadData = QPushButton("Load data")
 
         #Tabla
+        self.loadData = QPushButton("Load data")
         self.table = QTableWidget()
         self.table.horizontalHeader().setSectionsClickable(True)
         self.table.setStyleSheet("background-color: rgb(230,235,255)")
+        self.table.setColumnCount(21)
+        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
+            "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
 
         #conectores
         self.ptajeBarPGHD.valueChanged.connect(self.actualizarPGHD)
@@ -132,9 +143,6 @@ class Filters(QMainWindow):
         self.datos =[]
         self.currentDatos = self.datos
         self.listadeEmpates = []
-        self.table.setColumnCount(18)
-        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
-             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
 
         #threads
         self.threadpool = QThreadPool()
@@ -190,6 +198,8 @@ class Filters(QMainWindow):
         
         self.setMinimumSize(QSize(1200, 600))
         self.setCentralWidget(globalWidgets)
+
+
     def actualizarPGHD(self):
         self.pghd.setText("PGHD:        {}%".format(self.ptajeBarPGHD.value()))
     
@@ -239,9 +249,9 @@ class Filters(QMainWindow):
         self.listadeEmpates = []
         row = 0
         while row < self.table.rowCount():
-            if self.currentDatos[row][8] != "N/D":
+            if self.currentDatos[row][4] != "N/D":
                 string1 = ""
-                resultado = self.currentDatos[row][8]
+                resultado = self.currentDatos[row][4]
                 indice = 0
                 while indice < len(resultado) and resultado[indice] != "-":
                     string1 = string1 + resultado[indice]
@@ -263,8 +273,6 @@ class Filters(QMainWindow):
         self.empates.setText(str(self.empatesNum) + " Empates")
         if(len(self.currentDatos) != 0):
             self.ptajeEmpates.setText(str(round(self.empatesNum/len(self.currentDatos) * 100, 2)) + "% de Empates")
-        
-        self.printTheProgressBars()
 
     def aplicarResultado(self):
         if(len(self.datos) > 0):
@@ -276,16 +284,16 @@ class Filters(QMainWindow):
             for elemento in self.datos:
                 contador+= 100
                 isIn = True
-                if not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[4], float) and elemento[4] >= self.ptajeBarPGHD.value())):
+                if not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGHD.value())):
                     isIn = False
 
-                if isIn and not(self.ptajeBarPGAD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGAD.value())):
+                if isIn and not(self.ptajeBarPGAD.value() <= 0 or (isinstance(elemento[6], float) and elemento[6] >= self.ptajeBarPGAD.value())):
                     isIn = False
 
-                if isIn and not(self.ptajeBarPHD.value() <= 0 or (isinstance(elemento[6], float) and elemento[6] >= self.ptajeBarPHD.value())):
+                if isIn and not(self.ptajeBarPHD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPHD.value())):
                     isIn = False
 
-                if isIn and not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPAD.value())):
+                if isIn and not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[8], float) and elemento[8] >= self.ptajeBarPAD.value())):
                     isIn = False
 
                 if isIn and not((self.ptajeBarTGPG.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
@@ -305,36 +313,36 @@ class Filters(QMainWindow):
                 if isIn and not(self.ptajeBarPJAway.value() <= 0 or elemento[13] >= self.ptajeBarPJAway.value()):
                     isIn = False  
                 
-                if isIn and not(self.ptajeBarRempate.value() <= 0 or elemento[14] >= self.ptajeBarRempate.value()):
+                if isIn and not(self.ptajeBarRempate.value() <= 0 or elemento[14]+elemento[15]+elemento[16]+elemento[17] >= self.ptajeBarRempate.value()):
                     isIn = False
 
-                if isIn and not((self.ptajeBarODD1.getBigerThanHandler() <= 0 and (isinstance(elemento[15], str))) or (
-                                 (isinstance(elemento[15], float) and elemento[15] >= self.ptajeBarODD1.getBigerThanHandler()
-                                 and self.ptajeBarODD1.getLessThanHandler() >= elemento[15]))):
+                if isIn and not((self.ptajeBarODD1.getBigerThanHandler() <= 0 and (isinstance(elemento[18], str))) or (
+                                 (isinstance(elemento[18], float) and elemento[18] >= self.ptajeBarODD1.getBigerThanHandler()
+                                 and self.ptajeBarODD1.getLessThanHandler() >= elemento[18]))):
                     isIn = False
 
-                if isIn and not((self.ptajeBarODD2.getBigerThanHandler() <= 0 and (isinstance(elemento[16], str))) or (
-                                 (isinstance(elemento[16], float) and elemento[16] >= self.ptajeBarODD2.getBigerThanHandler()
-                                 and self.ptajeBarODD2.getLessThanHandler() >= elemento[16]))):
+                if isIn and not((self.ptajeBarODD2.getBigerThanHandler() <= 0 and (isinstance(elemento[19], str))) or (
+                                 (isinstance(elemento[19], float) and elemento[19] >= self.ptajeBarODD2.getBigerThanHandler()
+                                 and self.ptajeBarODD2.getLessThanHandler() >= elemento[19]))):
                     isIn = False  
                 
-                if isIn and not((self.ptajeBarUNDER25.getBigerThanHandler() <= 0 and (isinstance(elemento[17], str))) or (
-                                 (isinstance(elemento[17], float) and elemento[17] >= self.ptajeBarUNDER25.getBigerThanHandler()
-                                 and self.ptajeBarUNDER25.getLessThanHandler() >= elemento[17]))):
+                if isIn and not((self.ptajeBarUNDER25.getBigerThanHandler() <= 0 and (isinstance(elemento[20], str))) or (
+                                 (isinstance(elemento[20], float) and elemento[20] >= self.ptajeBarUNDER25.getBigerThanHandler()
+                                 and self.ptajeBarUNDER25.getLessThanHandler() >= elemento[20]))):
                     isIn = False
                 
                 if  isIn:
                     self.currentDatos.append(elemento)
                 
-                if(contador%1500 == 0):
+                if(contador%3000 == 0):
                     self.progressBar.setValue(contador/len(self.datos))
                 
             self.progressBar.hide()
             self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
             self.table.clear()
             self.table.setRowCount(len(self.currentDatos))
-            self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD %", "PGAD %", "PHD %", "PAD %",
-             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
+            self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
+                "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
             fila = 0
             for row in self.currentDatos:
                 self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
@@ -355,9 +363,11 @@ class Filters(QMainWindow):
                 self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
                 self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
                 self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+                self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
+                self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
+                self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
                 fila +=1
-                
-                
+                  
             self.getActualEmpates()
             self.printTheProgressBars()
         else:
@@ -382,10 +392,9 @@ class Filters(QMainWindow):
     def endBar(self):
         self.table.setRowCount(len(self.currentDatos))
         self.progressBar.hide()
-        self.getActualEmpates()
         self.table.clear()
-        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
-            "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
+        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
+            "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
         fila = 0
         for row in self.currentDatos:
             self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
@@ -406,7 +415,12 @@ class Filters(QMainWindow):
             self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
             self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
             self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+            self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
+            self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
+            self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
             fila +=1
+        
+        self.getActualEmpates()
         self.printTheProgressBars()
 
     def guardarSetts(self):
@@ -418,8 +432,7 @@ class Filters(QMainWindow):
         self.loadData.setText("Loading...")
         self.progressBar.show()
 
-        worker = ChargeDatabase("""SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
-                        HW, HD, HL, AW, AD, AL, GOALSGH, GOALSGA, GOALCGH, GOALCGA, REH, REA, REHH, REAA, HHW, HHD, HHL, AAW, AAL, AAD FROM FIXTURES WHERE FTHG != -1 AND FTAG != -1""")
+        worker = ChargeDatabase(self.chargestring)
         worker.signals.progress.connect(self.update_progress)
         worker.signals.data.connect(self.loadedData)
         self.threadpool.start(worker)
@@ -449,6 +462,9 @@ class Filters(QMainWindow):
             self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
             self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
             self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+            self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
+            self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
+            self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
 
             fila += 1
             if(fila%100 == 0):
@@ -458,36 +474,38 @@ class Filters(QMainWindow):
         self.loadData.setText("Load data")
         self.getActualEmpates()
         self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
+        self.printTheProgressBars()
 
 
     def printTheProgressBars(self):
 
-        fila = self.table.rowAt(0)
-        while fila >= 0 and fila < len(self.currentDatos) and fila <= self.table.rowAt(self.table.height()):   
-            if self.listadeEmpates[fila] == 1:
-                for count in range(self.table.columnCount()):
-                    self.table.item(fila, count).setBackground(QColor("#50F570"))
-            elif self.listadeEmpates[fila] == 2:
-                for count in range(self.table.columnCount()):
-                    self.table.item(fila, count).setBackground(QColor("#fa7050"))
+        if len(self.currentDatos) > 0:
+            fila = self.table.rowAt(0)
+            while fila >= 0 and fila <= self.table.rowAt(self.table.height()):   
+                if self.listadeEmpates[fila] == 1:
+                    for count in range(5):
+                        self.table.item(fila, count).setBackground(QColor("#50F570"))
+                elif self.listadeEmpates[fila] == 2:
+                    for count in range(5):
+                        self.table.item(fila, count).setBackground(QColor("#fa7050"))
 
-            for col in range( self.table.columnCount()):
-                if isinstance(self.currentDatos[fila][col], float) or isinstance(self.currentDatos[fila][col], int):
-                    bar1 = QProgressBar()
-                    bar1.setTextVisible(True)
-                    bar1.setMaximum(self.max_list[col])
-                    if(self.currentDatos[fila][col] > bar1.maximum()):
-                        bar1.setMaximum(self.currentDatos[fila][col])
-                    bar1.setValue(self.currentDatos[fila][col])
-                    bar1.setFormat(str(self.currentDatos[fila][col]) + "/" + str(self.max_list[col]))
-                    bar1.setAlignment(Qt.AlignCenter)
-                    self.table.setCellWidget(fila, col, bar1)
-                    if self.listadeEmpates[fila] == 1:
-                        bar1.setStyleSheet(self.style1)
-                    elif self.listadeEmpates[fila] == 2:
-                        bar1.setStyleSheet(self.style2)
+                for col in range(5, self.table.columnCount()):
+                    if isinstance(self.currentDatos[fila][col], float) or isinstance(self.currentDatos[fila][col], int):
+                        bar1 = QProgressBar()
+                        bar1.setTextVisible(True)
+                        bar1.setMaximum(self.max_list[col])
+                        if(self.currentDatos[fila][col] > bar1.maximum()):
+                            bar1.setMaximum(self.currentDatos[fila][col])
+                        bar1.setValue(self.currentDatos[fila][col])
+                        bar1.setFormat(str(self.currentDatos[fila][col]))
+                        bar1.setAlignment(Qt.AlignCenter)
+                        self.table.setCellWidget(fila, col, bar1)
+                        if self.listadeEmpates[fila] == 1:
+                            bar1.setStyleSheet(self.style1)
+                        elif self.listadeEmpates[fila] == 2:
+                            bar1.setStyleSheet(self.style2)
 
-            fila +=1
+                fila +=1
 
 
     def conectarConNextTabla(self):
@@ -540,3 +558,7 @@ class Filters(QMainWindow):
         self.ptajeBarODD1.reset()
         self.ptajeBarODD2.reset()
         self.ptajeBarUNDER25.reset()
+
+    def resizeEvent(self, event):#sobreescribimos el metodo
+        self.printTheProgressBars()
+        QMainWindow.resizeEvent(self, event)

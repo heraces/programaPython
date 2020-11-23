@@ -1,5 +1,5 @@
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from PyQt5.QtGui import QPainter, QBrush, QPen
 from PyQt5.QtCore import Qt, pyqtSlot
  
@@ -8,7 +8,7 @@ class DobleSlider(QWidget):
     def __init__(self, width, height, rango, interval, Label):
         super().__init__()
 
-        #tamaño del canas
+        #tamaño del canvas
         self.width = width
         self.height = height 
         self.range = rango
@@ -48,7 +48,7 @@ class DobleSlider(QWidget):
         painter = QPainter(self)
         painter.setPen(QPen(Qt.gray, 1, Qt.SolidLine))
         painter.setBrush(QBrush(Qt.gray, Qt.SolidPattern))
-        #pintamos en guion/rallita/rail
+        #pintamos el guion/rallita/rail
         painter.drawRect(0, self.height/5*2, self.width, self.height/5)
         #cambiamos el color
         painter.setPen(QPen(Qt.blue, 1, Qt.SolidLine))
@@ -83,7 +83,7 @@ class DobleSlider(QWidget):
                 if event.x() - self.handleWidth/2 < 0:
                     self.leftPos = 0
                 elif event.x() + self.handleWidth/2 > self.rigthLeft:
-                    self.leftPos = self.rightPos -1
+                    self.leftPos = self.rightPos - 1
                 else:
                     self.leftPos = int(abs(self.initPos-event.x() - self.handleWidth/2)/self.visualInterval)
                 self.leftLeft = self.leftPos * self.visualInterval
@@ -92,7 +92,7 @@ class DobleSlider(QWidget):
                 if event.x() + self.handleWidth/2 >= self.width:
                     self.rightPos = self.range/self.interval
                 elif event.x() - self.handleWidth/2 < self.leftLeft +self.handleWidth:
-                    self.rightPos = self.leftPos +1
+                    self.rightPos = self.leftPos + 1
                 else:
                     self.rightPos = int(abs(self.initPos-event.x() - self.handleWidth/2)/self.visualInterval)
                 self.rigthLeft = self.rightPos * self.visualInterval
@@ -113,12 +113,10 @@ class DobleSlider(QWidget):
 
 
     def getBigerThanHandler(self):
-        return round((self.leftPos * self.interval),4)
+        return round((self.leftPos * self.interval),3)
 
     def getLessThanHandler(self):
-        if self.rightPos == self.range/self.interval:
-            return 100000000000000
-        return round((self.rightPos * self.interval),4)
+        return round((self.rightPos * self.interval),3)
 
 
     def setBigerThanHandler(self, aux):
@@ -132,7 +130,7 @@ class DobleSlider(QWidget):
         self.editText()
     
     def values(self):
-        return [self.leftPos, self.rightPos]
+        return [self.leftPos * self.interval, self.rightPos * self.interval]
 
     def valuesToString(self):
         return str(round((self.leftPos * self.interval),2)) + "-" + str(round((self.rightPos * self.interval),2))
@@ -147,12 +145,12 @@ class DobleSlider(QWidget):
     def editText(self):
         aux = ""
         numero = 0
-        while self.text[numero] != " ":
+        while self.text[numero] != " ": # recorremos la cadena de texto del label hasta encontrar un espacio
             aux += self.text[numero]
             numero+=1
 
         result = self.valuesToString()
-        while len(aux) + len(result) < len(self.text):
+        while len(aux) + len(result) < len(self.text): # ajustamos el resto de espacios
             aux += " "
 
-        self.label.setText(aux + result)
+        self.label.setText(aux + result)#añadimos el resultado al label

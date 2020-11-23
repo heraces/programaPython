@@ -1,8 +1,8 @@
 import sys
 
 from filters import Filters
-from PyQt5.QtCore import QSize, pyqtSlot
-from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QApplication, QStyle
+from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import QMainWindow, QTabWidget, QApplication, QStyle
 from plotsFile import Plots
 from predictions import Predictions
 
@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
         
         widget.addTab(globalWidgets, "Backtesting")
         widget.addTab(predictions, "Partidos futuros")
-        widget.addTab(plotlWidgets, "Plots")
+        widget.addTab(plotlWidgets, "Leagues Ratio")
 
         globalWidgets.filterValues.connect(predictions.copyingToPredictions)
         predictions.testingValues.connect(globalWidgets.copyingTofilters)

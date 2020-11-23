@@ -1,8 +1,6 @@
-from PyQt5.QtWidgets import (QDialog, QWidget, QLabel, QLineEdit, QListView, QPushButton, QProgressBar, QInputDialog,
-            QCheckBox, QListWidget, QVBoxLayout, QMessageBox, QHBoxLayout, QGridLayout, QStyle)
-from PyQt5.QtCore import QSize, Qt
-
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (QLabel, QPushButton, QInputDialog, QListWidget, QDialog,
+                            QVBoxLayout, QMessageBox, QHBoxLayout, QGridLayout, QStyle)
+from PyQt5.QtCore import QSize
 
 import json
 
@@ -14,10 +12,6 @@ class SaveDialog(QDialog):
         #referencia a Filters
         self.maninWindow =  mainWindow
         self.setWindowIcon(self.style().standardIcon(getattr(QStyle, "SP_DialogSaveButton")))
-        self.setStyleSheet("QProgressBar "
-                          "{"
-                                "height: 5px;"
-                          "}")
 
         # actual labels
         self.actual = QLabel("Actual Data")
@@ -250,8 +244,8 @@ class SaveDialog(QDialog):
                 self.spadValue.setText(str(data[self.listProfiles.currentItem().text()]["PAD"]))
                 self.stgpgValue.setText(str(data[self.listProfiles.currentItem().text()]["TGPG"][0]/10) + "-" + 
                                                     str(data[self.listProfiles.currentItem().text()]["TGPG"][1]/10))
-                self.sppgawayValue.setText(str(data[self.listProfiles.currentItem().text()]["PPGHome"]))
-                self.sppghomeValue.setText(str(data[self.listProfiles.currentItem().text()]["PPGAway"]))
+                self.sppghomeValue.setText(str(data[self.listProfiles.currentItem().text()]["PPGHome"]))
+                self.sppgawayValue.setText(str(data[self.listProfiles.currentItem().text()]["PPGAway"]))
                 self.spjhomeValue.setText(str(data[self.listProfiles.currentItem().text()]["PJHome"]))
                 self.spjawayValue.setText(str(data[self.listProfiles.currentItem().text()]["PJAway"]))
                 self.srempateValue.setText(str(data[self.listProfiles.currentItem().text()]["REmpate"]))
@@ -283,7 +277,7 @@ class SaveDialog(QDialog):
                                                             "PGAD" : self.maninWindow.ptajeBarPGAD.value(),
                                                             "PHD" : self.maninWindow.ptajeBarPHD.value(),
                                                             "PAD" : self.maninWindow.ptajeBarPAD.value(),
-                                                            "TGPG" : self.maninWindow.ptajeBarODD1.values(), 
+                                                            "TGPG" : self.maninWindow.ptajeBarTGPG.values(), 
                                                             "PPGHome" : self.maninWindow.ptajeBarPPGHome.value(),
                                                             "PPGAway" : self.maninWindow.ptajeBarPPGAway.value(),
                                                             "PJHome" : self.maninWindow.ptajeBarPJHome.value(),

@@ -9,6 +9,9 @@ class OrdererSignals(QObject):
 class DbSignals(QObject):
     progress = pyqtSignal(int)
     data = pyqtSignal(list)
+
+class ClasesSignals(QObject):
+    data = pyqtSignal(list)
     
 class Orderer(QRunnable):
     def __init__(self, datos, columna):
@@ -30,8 +33,7 @@ class Orderer(QRunnable):
                         self.datos[indice] = self.datos[sorting]
                         self.datos[sorting] = line
 
-
-                elif isinstance(self.datos[sorting][self.sortingColumn], float):
+                elif isinstance(self.datos[sorting][self.sortingColumn], float) or isinstance(self.datos[sorting][self.sortingColumn], int):
                         if isinstance(self.datos[indice][self.sortingColumn], str):
                             line = self.datos[indice]
                             self.datos[indice] = self.datos[sorting]
@@ -55,7 +57,6 @@ class Orderer(QRunnable):
 class ChargeDatabase(QRunnable):
     def __init__(self, query):
         super().__init__()
-        
         self.signals = DbSignals()
         self.query = query
 
@@ -73,17 +74,20 @@ class ChargeDatabase(QRunnable):
             maRalla.append(self.getTime(row["TIME"]))
             maRalla.append(self.findName(row["ID_HOME"]))
             maRalla.append(self.findName(row["ID_AWAY"]))
+            maRalla.append(self.getResultado(row))
             maRalla.append(self.getTheGlobalHomePercentage(row))
             maRalla.append(self.getTheGlobalAwayPercentage(row))
             maRalla.append(self.getTheHomePercentage(row))
             maRalla.append(self.getTheAwayPercentage(row))
-            maRalla.append(self.getResultado(row))
             maRalla.append(self.getTotalGoalsInGame(row))
             maRalla.append(self.getPPGHome(row))
             maRalla.append(self.getPPGAway(row))
             maRalla.append(self.getPJHome(row))
             maRalla.append(self.getPJAway(row))
-            maRalla.append(self.getRempate(row))
+            maRalla.append(row["REH"])
+            maRalla.append(row["REA"])
+            maRalla.append(row["REHH"])
+            maRalla.append(row["REAA"])
             maRalla.append(row["ODDS_1"])
             maRalla.append(row["ODDS_2"])
             maRalla.append(row["ODDS_UNDER25FT"])
@@ -177,11 +181,18 @@ class ChargeDatabase(QRunnable):
     def getPJAway(self, row):
         return row["AW"] + row["AD"]+ row["AL"]
 
-    def getRempate(self, row):
-        return row["REH"] + row["REA"]+ row["REHH"] + row["REAA"]
-
     def getResultado(self, row):
         if row["FTHG"] < 0:
             return "N/D"
         return str(row["FTHG"]) + " - " + str(row["FTAG"])
 
+class GetTeams(QRunnable):
+    def __init__(self):
+        super().__init__()
+        self.signals = ClasesSignals()
+
+    @pyqtSlot()
+    def run(self):
+        db = Database()
+        self.signals.data.emit(db.query("SELECT NAME FROM LEAGUES"))
+        del db

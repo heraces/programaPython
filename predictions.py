@@ -1,34 +1,42 @@
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, QThreadPool
 from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QProgressBar, QMessageBox,
                              QMainWindow, QSlider, QWidget, QTableWidget, QTableWidgetItem,
-                             QVBoxLayout, QCheckBox, QHBoxLayout, QGridLayout)
+                             QVBoxLayout, QGridLayout)
                                                           
-from PyQt5.QtGui import QIcon, QColor
+from PyQt5.QtGui import QColor
 from threaded import Orderer, ChargeDatabase
 from localDatabase import SaveDialog
 from dobleSlider import DobleSlider
+import time
+from datetime import datetime, timedelta, date
 
 class Predictions(QMainWindow):
     testingValues = pyqtSignal(list)
+    sfecha = (datetime.today()+timedelta(days=1)).strftime('%Y%m%d')
+    chargestring = """SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
+                        HW, HD, HL, AW, AD, AL, GOALSGH, GOALSGA, GOALCGH, GOALCGA, REH, REA, REHH, REAA, HHW, HHD, HHL, 
+                        AAW, AAL, AAD FROM FIXTURES WHERE FTHG = -1 and FTAG = -1 and DATE >="""
+    chargestring += sfecha
+
     style1 =  """QProgressBar {background-color: rgb(200, 255, 240);
                            border-style: outset;
                            border-width: 2px;
                            border-color: #74c8ff;
                            border-radius: 9px;
                            border-width: 2px;} 
-                           QProgressBar::chunk:horizontal{ background: rgb(20,230,40);
+                           QProgressBar::chunk:horizontal{ background: rgb(20,220,100);
                            border-radius: 9px;}"""
-
-    max_list = [0,0,0,0, 100,100,100,100, 0, 5, 10, 10, 50, 50, 10, 10,10,10]
+    #tamaño maximo de cada progressbar
+    max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 10, 10, 50, 50, 10, 10, 10, 10, 10, 10,10,10]
 
     def __init__(self):
         super().__init__()
         
-        self.setStyleSheet("background-color: rgb(240,190,200)")
+        self.setStyleSheet("background-color: rgb(240,190,220)")
 
         #creates widgets
         globalWidgets = QWidget()
-        globalWidgets.setWindowTitle("Backtesting")
+        globalWidgets.setWindowTitle("Predictions")
 
         #widgets layout1
         self.filtros = QLabel("Filtros")
@@ -90,21 +98,20 @@ class Predictions(QMainWindow):
         self.partidos = QLabel("0 Partidos")
         self.empatesNum = 0
         
-        self.loadData = QPushButton("Load Data")
-
         #Tabla
+        self.loadData = QPushButton("Load Data")
         self.table = QTableWidget()
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setSectionsClickable(True)
         self.table.setStyleSheet("background-color: rgb(255,235,230)")
+        self.table.setColumnCount(21)
+        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
+             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
 
         #databases y tal
         self.datos =[]
         self.currentDatos = self.datos
         self.listadeEmpates = []
-        self.table.setColumnCount(18)
-        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
-             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
 
         #threads
         self.threadpool = QThreadPool()
@@ -239,7 +246,6 @@ class Predictions(QMainWindow):
     def endBar(self):
         self.table.setRowCount(len(self.currentDatos))
         self.progressBar.hide()
-        self.getActualEmpates()
         self.table.clear()
         self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
@@ -263,7 +269,12 @@ class Predictions(QMainWindow):
             self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
             self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
             self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+            self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
+            self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
+            self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
             fila +=1
+            
+        self.getActualEmpates()
         self.printTheProgressBars()
 
     def guardarSetts(self):
@@ -313,9 +324,9 @@ class Predictions(QMainWindow):
         self.listadeEmpates = []
         row = 0
         while row < self.table.rowCount():
-            if self.currentDatos[row][8] != "N/D":
+            if self.currentDatos[row][4] != "N/D":
                 string1 = ""
-                resultado = self.currentDatos[row][8]
+                resultado = self.currentDatos[row][4]
                 indice = 0
                 while indice < len(resultado) and resultado[indice] != "-":
                     string1 = string1 + resultado[indice]
@@ -340,14 +351,12 @@ class Predictions(QMainWindow):
         
         self.printTheProgressBars()
 
-
             
     def loadDatabase(self):
         self.loadData.setText("Loading...")
         self.progressBar.show()
 
-        worker = ChargeDatabase("""SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
-                        HW, HD, HL, AW, AD, AL, GOALSGH, GOALSGA, GOALCGH, GOALCGA, REH, REA, REHH, REAA, HHW, HHD, HHL, AAW, AAL, AAD FROM FIXTURES WHERE FTHG = -1 or FTAG = -1""")
+        worker = ChargeDatabase(self.chargestring)
         worker.signals.progress.connect(self.update_progress)
         worker.signals.data.connect(self.loadedData)
         self.threadpool.start(worker)
@@ -377,6 +386,9 @@ class Predictions(QMainWindow):
             self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
             self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
             self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+            self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
+            self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
+            self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
 
             fila += 1
             if(fila%100 == 0):
@@ -400,7 +412,7 @@ class Predictions(QMainWindow):
                     if(self.currentDatos[fila][col] > bar1.maximum()):
                         bar1.setMaximum(self.currentDatos[fila][col])
                     bar1.setValue(self.currentDatos[fila][col])
-                    bar1.setFormat(str(self.currentDatos[fila][col]) + "/" + str(self.max_list[col]))
+                    bar1.setFormat(str(self.currentDatos[fila][col]))
                     bar1.setAlignment(Qt.AlignCenter)
                     self.table.setCellWidget(fila, col, bar1)
                     bar1.setStyleSheet(self.style1)
@@ -470,7 +482,7 @@ class Predictions(QMainWindow):
                 if  isIn:
                     self.currentDatos.append(elemento)
                 
-                if(contador%1500 == 0):
+                if(contador%3000 == 0):
                     self.progressBar.setValue(contador/len(self.datos))
                 
             self.progressBar.hide()
@@ -499,8 +511,10 @@ class Predictions(QMainWindow):
                 self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
                 self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
                 self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+                self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
+                self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
+                self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
                 fila +=1
-                
                 
             self.getActualEmpates()
             self.printTheProgressBars()
