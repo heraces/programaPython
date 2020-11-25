@@ -150,6 +150,8 @@ class DobleSlider(QWidget):
             numero+=1
 
         result = self.valuesToString()
+        if self.text[-1 == "%"]:
+            result += "%"
         while len(aux) + len(result) < len(self.text): # ajustamos el resto de espacios
             aux += " "
 

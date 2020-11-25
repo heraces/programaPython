@@ -194,5 +194,6 @@ class GetTeams(QRunnable):
     @pyqtSlot()
     def run(self):
         db = Database()
-        self.signals.data.emit(db.query("SELECT NAME FROM LEAGUES"))
+        self.signals.data.emit(db.query("""SELECT LEAGUES.NAME, HW, HD, HL, AW, AD, AL FROM FIXTURES 
+                            JOIN LEAGUES ON ID_LEAGUE = LEAGUES.ID GROUP BY ID_LEAGUE"""))
         del db
