@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import (QLabel, QPushButton, QInputDialog, QListWidget, QDialog,
+from PyQt5.QtWidgets import (QLabel, QPushButton, QInputDialog, QListWidget, QDialog, QAbstractItemView,
                             QVBoxLayout, QMessageBox, QHBoxLayout, QGridLayout, QStyle)
 from PyQt5.QtCore import QSize
 
@@ -77,6 +77,7 @@ class SaveDialog(QDialog):
 
         self.listProfiles = QListWidget()
         self.listProfiles.setGeometry(50, 70, 150, 60) 
+        self.listProfiles.setSelectionMode(QAbstractItemView.SingleSelection)
 
         #buttons
         self.save = QPushButton("Save")
@@ -205,56 +206,63 @@ class SaveDialog(QDialog):
     def addProfile(self):
             text, ok = QInputDialog.getText(self, 'Add profile', "Name your new profile:")
             if ok and text != "":
-                try:
-                    saveit = True
-                    with open("svdStngs.json") as json_file:
-                        data = json.load(json_file)
-                        for d in data:
-                            if d == text:
-                                msg = QMessageBox()
-                                msg.setIcon(QMessageBox.Warning)
-                                msg.setText("There´s already a profile with this name")
-                                msg.setWindowTitle("Name already taken")
-                                msg.exec_()
-                                saveit = False
-                    
-                    if saveit:
-                        with open('svdStngs.json', "w") as json_file:
-                            data[text] = {"PGHD" : 0, "PGAD" : 0, "PHD" : 0, "PAD" : 0,"TGPG" : [0, 1], 
-                                    "PPGHome" : 0, "PPGAway" : 0, "PJHome" : 0, "PJAway" : 0, "REmpate" : 0,
-                                    "ODDS1" : [0, 1], "ODDS2" : [0, 1], "ODDS_UNDER25" : [0, 1]}
-                            json.dump(data, json_file)
-                        self.actualizarLista()
-                            
-                except KeyError:
+                if text == "-":
                     msg = QMessageBox()
                     msg.setIcon(QMessageBox.Warning)
-                    msg.setText("An error has occur")
-                    msg.setWindowTitle("Error")
+                    msg.setText("Está feo eso que intentas hacer ¬¬")
+                    msg.setWindowTitle("Nombre invalido")
                     msg.exec_()
+                else:
+                    try:
+                        saveit = True
+                        with open("svdStngs.json") as json_file:
+                            data = json.load(json_file)
+                            for d in data:
+                                if d == text:
+                                    msg = QMessageBox()
+                                    msg.setIcon(QMessageBox.Warning)
+                                    msg.setText("There´s already a profile with this name")
+                                    msg.setWindowTitle("Name already taken")
+                                    msg.exec_()
+                                    saveit = False 
+                            
+                        if saveit:
+                            with open('svdStngs.json', "w") as json_file:
+                                data[text] = {"PGHD" : 0, "PGAD" : 0, "PHD" : 0, "PAD" : 0,"TGPG" : [0, 1], 
+                                        "PPGHome" : 0, "PPGAway" : 0, "PJHome" : 0, "PJAway" : 0, "REmpate" : 0,
+                                        "ODDS1" : [0, 1], "ODDS2" : [0, 1], "ODDS_UNDER25" : [0, 1]}
+                                json.dump(data, json_file)
+                            self.actualizarLista()
+                            
+                    except KeyError:
+                        msg = QMessageBox()
+                        msg.setIcon(QMessageBox.Critical)
+                        msg.setText("An error has occur")
+                        msg.setWindowTitle("Error")
+                        msg.exec_()
 
     def setsavedBars(self):
         if len(self.listProfiles.selectedItems()) >= 1:
             with open('svdStngs.json', "r") as json_file:
                 data = json.load(json_file)
                 self.ssavedData.setText("Saved data: {}".format(self.listProfiles.currentItem().text()))
-                self.spghdValue.setText(str(data[self.listProfiles.currentItem().text()]["PGHD"]))
-                self.spgadValue.setText(str(data[self.listProfiles.currentItem().text()]["PGAD"]))
-                self.sphdValue.setText(str(data[self.listProfiles.currentItem().text()]["PHD"]))
-                self.spadValue.setText(str(data[self.listProfiles.currentItem().text()]["PAD"]))
-                self.stgpgValue.setText(str(data[self.listProfiles.currentItem().text()]["TGPG"][0]/10) + "-" + 
-                                                    str(data[self.listProfiles.currentItem().text()]["TGPG"][1]/10))
-                self.sppghomeValue.setText(str(data[self.listProfiles.currentItem().text()]["PPGHome"]))
-                self.sppgawayValue.setText(str(data[self.listProfiles.currentItem().text()]["PPGAway"]))
-                self.spjhomeValue.setText(str(data[self.listProfiles.currentItem().text()]["PJHome"]))
-                self.spjawayValue.setText(str(data[self.listProfiles.currentItem().text()]["PJAway"]))
-                self.srempateValue.setText(str(data[self.listProfiles.currentItem().text()]["REmpate"]))
-                self.sodd1Value.setText(str(data[self.listProfiles.currentItem().text()]["ODDS1"][0]/10)+ "-" + 
-                                                    str(data[self.listProfiles.currentItem().text()]["ODDS1"][1]/10))
-                self.sodd2Value.setText(str(data[self.listProfiles.currentItem().text()]["ODDS2"][0]/10)+ "-" + 
-                                                    str(data[self.listProfiles.currentItem().text()]["ODDS2"][1]/10))
-                self.sodd_under25Value.setText(str(data[self.listProfiles.currentItem().text()]["ODDS_UNDER25"][0]/10)+ "-" + 
-                                                    str(data[self.listProfiles.currentItem().text()]["ODDS_UNDER25"][1]/10))
+                self.spghdValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PGHD"],2)))
+                self.spgadValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PGAD"],2)))
+                self.sphdValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PHD"],2)))
+                self.spadValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PAD"],2)))
+                self.stgpgValue.setText(str(round(data[self.listProfiles.currentItem().text()]["TGPG"][0]/10,2)) + "-" + 
+                                                    str(round(data[self.listProfiles.currentItem().text()]["TGPG"][1]/10,2)))
+                self.sppghomeValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PPGHome"],2)))
+                self.sppgawayValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PPGAway"],2)))
+                self.spjhomeValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PJHome"],2)))
+                self.spjawayValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PJAway"],2)))
+                self.srempateValue.setText(str(round(data[self.listProfiles.currentItem().text()]["REmpate"])))
+                self.sodd1Value.setText(str(round(data[self.listProfiles.currentItem().text()]["ODDS1"][0]/10,2))+ "-" + 
+                                                    str(round(data[self.listProfiles.currentItem().text()]["ODDS1"][1]/10,2)))
+                self.sodd2Value.setText(str(round(data[self.listProfiles.currentItem().text()]["ODDS2"][0]/10,2))+ "-" + 
+                                                    str(round(data[self.listProfiles.currentItem().text()]["ODDS2"][1]/10,2)))
+                self.sodd_under25Value.setText(str(round(data[self.listProfiles.currentItem().text()]["ODDS_UNDER25"][0]/10,2))+ "-" + 
+                                                    str(round(data[self.listProfiles.currentItem().text()]["ODDS_UNDER25"][1]/10,2)))
        
     def actualizarLista(self):    
         with open('svdStngs.json', "r") as json_file:
@@ -266,6 +274,11 @@ class SaveDialog(QDialog):
                 self.setsavedBars()
             except:
                 pass
+
+        for i in range(self.listProfiles.count()):
+            if self.maninWindow.filterProfile.text() == self.listProfiles.item(i).text() + " -profile":
+               self.listProfiles.setCurrentRow(i)
+               break
     
     def saveData(self):
         if len(self.listProfiles.selectedItems()) > 0:
@@ -318,5 +331,6 @@ class SaveDialog(QDialog):
                 self.maninWindow.ptajeBarUNDER25.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["ODDS_UNDER25"][0])
                 self.maninWindow.ptajeBarUNDER25.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["ODDS_UNDER25"][1])
                 
+            self.maninWindow.filterProfile.setText(self.listProfiles.selectedItems()[0].text() + " -profile")
             self.maninWindow.aplicarResultado()
             self.close()

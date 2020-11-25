@@ -1,6 +1,6 @@
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout
-from PyQt5.QtCore import QSize, QThreadPool, Qt
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel
+from PyQt5.QtCore import QSize, QThreadPool
 from threaded import GetTeams
 from dobleSlider import DobleSlider
 
@@ -22,16 +22,18 @@ class MplCanvas(FigureCanvasQTAgg):
 class Plots(QMainWindow):
     def __init__(self):
         super().__init__()
+        #widgets
         self.nonUselessLabel = QLabel("Porcentajes:   0-50%")
         self.margenDeEmpates = DobleSlider(1150, 35, 50, 0.5, self.nonUselessLabel)
         self.plot = QPushButton("Plot")
-        self.clear = QPushButton("Clear")
 
+        #conections
         self.plot.clicked.connect(self.letsPlot)
 
+        #otras variables
         self.datos = []
         self.fig = MplCanvas()
-        self.maxDatos = 15
+        self.maxDatos = 20 #datos a printear +1
 
         #threadpool
         self.threadpool = QThreadPool()
@@ -43,10 +45,9 @@ class Plots(QMainWindow):
         main_layout.addWidget(self.nonUselessLabel)
         main_layout.addWidget(self.margenDeEmpates,stretch = 1)
         main_layout.addWidget(self.plot)
-        main_layout.addWidget(self.fig, stretch = 10)
+        main_layout.addWidget(self.fig, stretch = 15)
                 
         widget.setLayout(main_layout)
-        self.setMinimumSize(QSize(1200, 600))
         self.setCentralWidget(widget)
 
 
@@ -61,24 +62,23 @@ class Plots(QMainWindow):
             numbers = []
             names = []
             for row in rawData:
-                num = row["HD"] + row["AD"]
-                div = row["HW"] + row["HD"] + row["HL"] + row["AW"] + row["AD"] + row["AL"]
-                if div != 0:
-                    num = num / div * 100
+                num = 0
+                if row["LEAGUE_PLAYED"] != 0:
+                    num = row["LEAGUE_DRAWS"] / row["LEAGUE_PLAYED"] * 100
                 numbers.append(num)
                 names.append(row["NAME"])
 
             self.datos.append(numbers)
             self.datos.append(names)
 
-        for indice in range(len(self.datos[0])-1, 0, -1):
-            for sorting in range(indice):
-                if self.datos[0][indice] > self.datos[0][sorting]:
-                    unoMas =[self.datos[0][indice], self.datos[1][indice]]
-                    self.datos[0][indice] = self.datos[0][sorting]
-                    self.datos[1][indice] = self.datos[1][sorting]
-                    self.datos[0][sorting] = unoMas[0]
-                    self.datos[1][sorting] = unoMas[1]
+            for indice in range(len(self.datos[0])-1, 0, -1):
+                for sorting in range(indice):
+                    if self.datos[0][indice] > self.datos[0][sorting]:
+                        unoMas =[self.datos[0][indice], self.datos[1][indice]]
+                        self.datos[0][indice] = self.datos[0][sorting]
+                        self.datos[1][indice] = self.datos[1][sorting]
+                        self.datos[0][sorting] = unoMas[0]
+                        self.datos[1][sorting] = unoMas[1]
 
         self.fig.axes.cla()
         self.fig.axes.invert_yaxis()
@@ -86,3 +86,10 @@ class Plots(QMainWindow):
         self.fig.axes.set_ylabel("Leagues")
         self.fig.axes.barh(self.datos[1][:self.maxDatos], self.datos[0][:self.maxDatos])
         self.fig.draw()
+        
+    def resizeEvent(self, event):#sobreescribimos el metodo
+        self.changeSize()
+        QMainWindow.resizeEvent(self, event)
+
+    def changeSize(self):
+        self.margenDeEmpates.resizeWidth(width = self.plot.width(), height = self.plot.height())

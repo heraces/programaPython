@@ -65,6 +65,7 @@ class ChargeDatabase(QRunnable):
         datos =[]
         db = Database()
         rows = db.query(self.query)
+        self.signals.progress.emit(+15)
         self.teams = db.query("SELECT * FROM TEAMS ORDER BY ascii(ID) ASC")
 
         for row in rows:   
@@ -93,8 +94,8 @@ class ChargeDatabase(QRunnable):
             maRalla.append(row["ODDS_UNDER25FT"])
 
             datos.append(maRalla)
-            if(len(datos) % 100):
-                self.signals.progress.emit(len(datos)/len(rows) * 50)
+            if(len(datos) % 1000):
+                self.signals.progress.emit(len(datos)/len(rows) + 15)
 
         self.signals.data.emit(datos)
         del db
@@ -194,6 +195,6 @@ class GetTeams(QRunnable):
     @pyqtSlot()
     def run(self):
         db = Database()
-        self.signals.data.emit(db.query("""SELECT LEAGUES.NAME, HW, HD, HL, AW, AD, AL FROM FIXTURES 
+        self.signals.data.emit(db.query("""SELECT LEAGUES.NAME, LEAGUE_PLAYED, LEAGUE_DRAWS FROM FIXTURES 
                             JOIN LEAGUES ON ID_LEAGUE = LEAGUES.ID GROUP BY ID_LEAGUE"""))
         del db

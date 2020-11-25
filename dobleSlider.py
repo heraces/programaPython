@@ -11,16 +11,16 @@ class DobleSlider(QWidget):
         #tamaño del canvas
         self.width = width
         self.height = height 
+
+        #medidas del handle, rango y tal
+        self.handleWidth = self.width/50
+        self.handleHeight = self.height
         self.range = rango
         self.interval = interval
-        self.visualInterval = width/(rango/interval)
+        self.visualInterval = (self.width-self.handleWidth)/(self.range/self.interval)
         self.threshold = 0.2
         self.label = Label
         self.text = self.label.text()
-
-        #medidas del handle
-        self.handleWidth = self.width/50
-        self.handleHeight = self.height
 
         #pos del handler de la izquierda
         self.leftTop = 0
@@ -29,8 +29,8 @@ class DobleSlider(QWidget):
 
         #pos del handler de la derecha
         self.rigthTop = 0
-        self.rigthLeft = self.width/50*49
         self.rightPos = self.range/self.interval
+        self.rigthLeft = self.rightPos * self.visualInterval
 
         #letsumove
         self.letsuMove = False
@@ -73,7 +73,6 @@ class DobleSlider(QWidget):
                 self.letsuMove = True 
                 return
 
-            
             self.initPos = event.x()
             
 
@@ -139,7 +138,7 @@ class DobleSlider(QWidget):
         self.leftPos = 0
         self.rightPos = self.range/self.interval
         self.leftLeft = 0        
-        self.rigthLeft = self.width/50*49
+        self.rigthLeft = self.rightPos * self.visualInterval
         self.editText()
 
     def editText(self):
@@ -150,9 +149,18 @@ class DobleSlider(QWidget):
             numero+=1
 
         result = self.valuesToString()
-        if self.text[-1 == "%"]:
+        if self.text[-1] == "%":
             result += "%"
         while len(aux) + len(result) < len(self.text): # ajustamos el resto de espacios
             aux += " "
 
         self.label.setText(aux + result)#añadimos el resultado al label
+
+    def resizeWidth(self, width, height): #resize width para cuando quieres cambiar el width y el height
+        self.width = width
+        self.height = height
+        self.handleWidth = self.width/50
+        self.handleHeight = self.height
+        self.visualInterval = (self.width-self.handleWidth)/(self.range/self.interval)
+        self.rigthLeft = self.leftPos * self.visualInterval
+        self.rigthLeft = self.rightPos * self.visualInterval

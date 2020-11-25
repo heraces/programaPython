@@ -11,24 +11,34 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowIcon(self.style().standardIcon(getattr(QStyle, "SP_DesktopIcon")))
-        globalWidgets = Filters()
-        predictions = Predictions()
-        plotlWidgets = Plots()
+        self.globalWidgets = Filters()
+        self.predictions = Predictions()
+        self.plotlWidgets = Plots()
 
-        widget = QTabWidget()
-        widget.setWindowTitle("Football stuff")
-        widget.setTabPosition(QTabWidget.North)
-        widget.setMovable(False)
+        self.widget = QTabWidget()
+        self.widget.setWindowTitle("Football stuff")
+        self.widget.setTabPosition(QTabWidget.North)
+        self.widget.setMovable(False)
         
-        widget.addTab(globalWidgets, "Backtesting")
-        widget.addTab(predictions, "Partidos futuros")
-        widget.addTab(plotlWidgets, "Leagues Ratio")
+        self.widget.addTab(self.globalWidgets, "Backtesting")
+        self.widget.addTab(self.predictions, "Partidos futuros")
+        self.widget.addTab(self.plotlWidgets, "Leagues Ratio")
 
-        globalWidgets.filterValues.connect(predictions.copyingToPredictions)
-        predictions.testingValues.connect(globalWidgets.copyingTofilters)
+        self.globalWidgets.filterValues.connect(self.predictions.copyingToPredictions)
+        self.predictions.testingValues.connect(self.globalWidgets.copyingTofilters)
+
+        self.widget.currentChanged.connect(self.justResize)
 
         self.setMinimumSize(QSize(1200, 700))
-        self.setCentralWidget(widget)
+        self.setCentralWidget(self.widget)
+
+    def justResize(self):
+        if self.widget.currentIndex() == self.widget.indexOf(self.globalWidgets):
+            self.globalWidgets.changeSize()
+        elif self.widget.currentIndex() == self.widget.indexOf(self.predictions):
+            self.predictions.changeSize()
+        else:
+            self.plotlWidgets.changeSize()
 
 app = QApplication(sys.argv)
 window = MainWindow()

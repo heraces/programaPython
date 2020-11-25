@@ -41,6 +41,8 @@ class Predictions(QMainWindow):
         #widgets layout1
         self.filtros = QLabel("Filtros")
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self.filterProfile = QLabel("-")
+        self.filterProfile.setStyleSheet("font-size: 15px; font-weight: bold; color: gray")
         self.pghd        = QLabel("PGHD:        0%")
         self.pgad        = QLabel("PGAD:        0%")
         self.phd         = QLabel("PHD:         0%")
@@ -141,6 +143,7 @@ class Predictions(QMainWindow):
         midLayout = QGridLayout()
         
         topLayout.addWidget(self.filtros, 0, 0, 1, 1)
+        topLayout.addWidget(self.filterProfile, 0, 1, 1, 1)
         topLayout.addWidget(self.pghd, 1, 0, 1, 1)
         topLayout.addWidget(self.pgad, 2, 0, 1, 1)
         topLayout.addWidget(self.phd, 1, 2, 1, 1)
@@ -184,7 +187,6 @@ class Predictions(QMainWindow):
         layout.addWidget(self.table)
         globalWidgets.setLayout(layout)
         
-        self.setMinimumSize(QSize(1200, 600))
         self.setCentralWidget(globalWidgets)
 
 
@@ -354,6 +356,7 @@ class Predictions(QMainWindow):
             
     def loadDatabase(self):
         self.loadData.setText("Loading...")
+        self.progressBar.setValue(0)
         self.progressBar.show()
 
         worker = ChargeDatabase(self.chargestring)
@@ -540,3 +543,14 @@ class Predictions(QMainWindow):
         self.ptajeBarODD1.reset()
         self.ptajeBarODD2.reset()
         self.ptajeBarUNDER25.reset()
+
+    def resizeEvent(self, event):#sobreescribimos el metodo
+        self.printTheProgressBars()
+        self.changeSize()
+        QMainWindow.resizeEvent(self, event)
+
+    def changeSize(self):
+        self.ptajeBarODD1.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
+        self.ptajeBarODD2.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
+        self.ptajeBarUNDER25.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
+        self.ptajeBarTGPG.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())

@@ -3,7 +3,7 @@ from PyQt5.QtCore import QSize, Qt, QThreadPool, pyqtSignal
 
 from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QMessageBox, QTableWidgetItem,
                              QMainWindow, QSlider, QWidget, QTableWidget, QVBoxLayout,
-                             QProgressBar, QGridLayout)
+                             QProgressBar, QGridLayout) 
 
 from PyQt5.QtGui import QColor
 from localDatabase import SaveDialog
@@ -51,6 +51,8 @@ class Filters(QMainWindow):
         #widgets layout1
         self.filtros = QLabel("Filtros")
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self.filterProfile = QLabel("-")
+        self.filterProfile.setStyleSheet("font-size: 15px; font-weight: bold; color: gray")
         self.pghd        = QLabel("PGHD:        0%")
         self.pgad        = QLabel("PGAD:        0%")
         self.phd         = QLabel("PHD:         0%")
@@ -130,7 +132,7 @@ class Filters(QMainWindow):
         self.ptajeBarPJAway.valueChanged.connect(self.actualizarPJAway)
         self.ptajeBarPJHome.valueChanged.connect(self.actualizarPJHome)
         self.ptajeBarRempate.valueChanged.connect(self.actualizarRempate)
-
+        
         self.aplicar.clicked.connect(self.aplicarResultado)
         self.save.clicked.connect(self.guardarSetts)
         self.binding.clicked.connect(self.conectarConNextTabla)
@@ -142,7 +144,7 @@ class Filters(QMainWindow):
         #databases y tal
         self.datos =[]
         self.currentDatos = self.datos
-        self.listadeEmpates = []
+        self.listadeEmpates = [] 
 
         #threads
         self.threadpool = QThreadPool()
@@ -153,6 +155,7 @@ class Filters(QMainWindow):
         midLayout = QGridLayout()
         
         topLayout.addWidget(self.filtros, 0, 0, 1, 1)
+        topLayout.addWidget(self.filterProfile, 0, 1, 1, 1)
         topLayout.addWidget(self.pghd, 1, 0, 1, 1)
         topLayout.addWidget(self.pgad, 2, 0, 1, 1)
         topLayout.addWidget(self.phd, 1, 2, 1, 1)
@@ -196,9 +199,7 @@ class Filters(QMainWindow):
         layout.addWidget(self.table)
         globalWidgets.setLayout(layout)
         
-        self.setMinimumSize(QSize(1200, 600))
         self.setCentralWidget(globalWidgets)
-
 
     def actualizarPGHD(self):
         self.pghd.setText("PGHD:        {}%".format(self.ptajeBarPGHD.value()))
@@ -430,6 +431,7 @@ class Filters(QMainWindow):
 
     def loadDatabase(self):
         self.loadData.setText("Loading...")
+        self.progressBar.setValue(0)
         self.progressBar.show()
 
         worker = ChargeDatabase(self.chargestring)
@@ -467,7 +469,7 @@ class Filters(QMainWindow):
             self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
 
             fila += 1
-            if(fila%100 == 0):
+            if(fila%500 == 0):
                 self.update_progress(int(fila/len(self.datos) * 50 +50))
 
         self.progressBar.hide()
@@ -561,4 +563,11 @@ class Filters(QMainWindow):
 
     def resizeEvent(self, event):#sobreescribimos el metodo
         self.printTheProgressBars()
+        self.changeSize()
         QMainWindow.resizeEvent(self, event)
+
+    def changeSize(self):
+        self.ptajeBarODD1.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
+        self.ptajeBarODD2.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
+        self.ptajeBarUNDER25.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
+        self.ptajeBarTGPG.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
