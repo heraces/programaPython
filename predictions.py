@@ -35,8 +35,8 @@ class Predictions(QMainWindow):
         self.setStyleSheet("background-color: rgb(240,190,220)")
 
         #creates widgets
-        globalWidgets = QWidget()
-        globalWidgets.setWindowTitle("Predictions")
+        predictions = QWidget()
+        predictions.setWindowTitle("Predictions")
 
         #widgets layout1
         self.filtros = QLabel("Filtros")
@@ -185,9 +185,9 @@ class Predictions(QMainWindow):
         layout.addLayout(midLayout)
         layout.addWidget(self.loadData)
         layout.addWidget(self.table)
-        globalWidgets.setLayout(layout)
+        predictions.setLayout(layout)
         
-        self.setCentralWidget(globalWidgets)
+        self.setCentralWidget(predictions)
 
 
     def actualizarPGHD(self):
@@ -405,22 +405,27 @@ class Predictions(QMainWindow):
 
     def printTheProgressBars(self):
 
-        fila = self.table.rowAt(0)
-        while fila >= 0 and fila < len(self.currentDatos) and fila < self.table.rowAt(self.table.height()):   
-            for col in range( self.table.columnCount()):
-                if isinstance(self.currentDatos[fila][col], float) or isinstance(self.currentDatos[fila][col], int):
-                    bar1 = QProgressBar()
-                    bar1.setTextVisible(True)
-                    bar1.setMaximum(self.max_list[col])
-                    if(self.currentDatos[fila][col] > bar1.maximum()):
-                        bar1.setMaximum(self.currentDatos[fila][col])
-                    bar1.setValue(self.currentDatos[fila][col])
-                    bar1.setFormat(str(self.currentDatos[fila][col]))
-                    bar1.setAlignment(Qt.AlignCenter)
-                    self.table.setCellWidget(fila, col, bar1)
-                    bar1.setStyleSheet(self.style1)
+        if len(self.currentDatos) > 0:
+            fila = self.table.rowAt(0)
+            end = self.table.rowAt(self.table.height())
+            if end <= 0:
+                end = self.table.rowCount()-1
 
-            fila +=1
+            while fila >= 0 and fila <= end: 
+                for col in range( self.table.columnCount()):
+                    if isinstance(self.currentDatos[fila][col], float) or isinstance(self.currentDatos[fila][col], int):
+                        bar1 = QProgressBar()
+                        bar1.setTextVisible(True)
+                        bar1.setMaximum(self.max_list[col])
+                        if(self.currentDatos[fila][col] > bar1.maximum()):
+                            bar1.setMaximum(self.currentDatos[fila][col])
+                        bar1.setValue(self.currentDatos[fila][col])
+                        bar1.setFormat(str(self.currentDatos[fila][col]))
+                        bar1.setAlignment(Qt.AlignCenter)
+                        self.table.setCellWidget(fila, col, bar1)
+                        bar1.setStyleSheet(self.style1)
+
+                fila +=1
 
 
 
