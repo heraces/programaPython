@@ -483,7 +483,13 @@ class Filters(QMainWindow):
 
         if len(self.currentDatos) > 0:
             fila = self.table.rowAt(0)
-            while fila >= 0 and fila <= self.table.rowAt(self.table.height()):   
+            print(fila)
+            end = self.table.rowAt(self.table.height())
+            if end <= 0:
+                end = self.table.rowCount()-1
+
+            print(end)
+            while fila >= 0 and fila <= end:   
                 if self.listadeEmpates[fila] == 1:
                     for count in range(5):
                         self.table.item(fila, count).setBackground(QColor("#50F570"))
