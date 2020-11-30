@@ -2,7 +2,6 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox, QHBoxLayout
 from PyQt5.QtCore import QSize, QThreadPool
 from threaded import GetTeams
-from dobleSlider import DobleSlider
 
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -24,17 +23,16 @@ class Plots(QMainWindow):
         super().__init__()
         self.setStyleSheet("background-color: rgb(200,250,230)")
         #widgets
-        self.nonUselessLabel = QLabel("Porcentajes:   0-50%")
         self.numberResuts = QLabel("Number of Resutls: ")
-        self.margenDeEmpates = DobleSlider(1150, 35, 50, 0.5, self.nonUselessLabel)
         self.plot = QPushButton("Plot")
         self.cant = QComboBox()
-        self.cant.addItems(["5", "10", "15", "20", "35", "All(not recomended)"])
+        self.cant.addItems(["5", "10", "15", "20", "35", "50"])
         self.cant.setItemData(0, 5)
         self.cant.setItemData(1, 10)
         self.cant.setItemData(2, 15)
         self.cant.setItemData(3, 20)
         self.cant.setItemData(4, 35)
+        self.cant.setItemData(5, 50)
 
         #conections
         self.plot.clicked.connect(self.letsPlot)
@@ -51,13 +49,11 @@ class Plots(QMainWindow):
         top_layout = QHBoxLayout()
         main_layout = QVBoxLayout()
 
-        top_layout.addWidget(self.nonUselessLabel)
         top_layout.addStretch()
         top_layout.addWidget(self.numberResuts)
         top_layout.addWidget(self.cant)
 
         main_layout.addLayout(top_layout)
-        main_layout.addWidget(self.margenDeEmpates,stretch = 1)
         main_layout.addWidget(self.plot)
         main_layout.addWidget(self.fig, stretch = 15)
                 
@@ -67,10 +63,10 @@ class Plots(QMainWindow):
 
     def letsPlot(self):
         worker = GetTeams()
-        worker.signals.data.connect(self.theseAreTheTeams)
+        worker.signals.data.connect(self.theseAreTheLeagues)
         self.threadpool.start(worker)
 
-    def theseAreTheTeams(self, rawData):
+    def theseAreTheLeagues(self, rawData):
 
         if len(self.datos) <= 0:
             numbers = []
@@ -80,11 +76,10 @@ class Plots(QMainWindow):
                 if row["LEAGUE_PLAYED"] != 0:
                     num = row["LEAGUE_DRAWS"] / row["LEAGUE_PLAYED"] * 100
                 numbers.append(num)
-                names.append(row["NAME"])
+                names.append(row["ID_LEAGUE"])
 
             self.datos.append(numbers)
             self.datos.append(names)
-            self.cant.setItemData(5, len(self.datos[0])) #esta linea aqui para poder printearlos todos
 
             for indice in range(len(self.datos[0])-1, 0, -1):
                 for sorting in range(indice):
@@ -101,10 +96,3 @@ class Plots(QMainWindow):
         self.fig.axes.set_ylabel("Leagues")
         self.fig.axes.barh(self.datos[1][:self.cant.itemData(self.cant.currentIndex())], self.datos[0][:self.cant.itemData(self.cant.currentIndex())])
         self.fig.draw()
-        
-    def resizeEvent(self, event):#sobreescribimos el metodo
-        self.changeSize()
-        QMainWindow.resizeEvent(self, event)
-
-    def changeSize(self):
-        self.margenDeEmpates.resizeWidth(width = self.plot.width(), height = self.plot.height())

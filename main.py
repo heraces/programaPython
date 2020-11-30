@@ -37,8 +37,6 @@ class MainWindow(QMainWindow):
             self.globalWidgets.changeSize()
         elif self.widget.currentIndex() == self.widget.indexOf(self.predictions):
             self.predictions.changeSize()
-        else:
-            self.plotlWidgets.changeSize()
 
 app = QApplication(sys.argv)
 window = MainWindow()

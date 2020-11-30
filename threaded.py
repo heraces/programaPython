@@ -68,7 +68,17 @@ class ChargeDatabase(QRunnable):
         self.signals.progress.emit(+15)
         self.teams = db.query("SELECT * FROM TEAMS ORDER BY ascii(ID) ASC")
 
+        minDate = rows[0]["DATE"]
+        maxDate = rows[0]["DATE"]
+        leagues = []
         for row in rows:   
+
+            if minDate > row["DATE"]:
+                minDate = row["DATE"]
+            elif maxDate < row["DATE"]:
+                maxDate = row["DATE"]
+            if row["ID_LEAGUE"] not in leagues:
+                leagues.append(row["ID_LEAGUE"])
 
             maRalla = []
             maRalla.append(self.getDate(row["DATE"]))
@@ -92,12 +102,13 @@ class ChargeDatabase(QRunnable):
             maRalla.append(row["ODDS_1"])
             maRalla.append(row["ODDS_2"])
             maRalla.append(row["ODDS_UNDER25FT"])
+            maRalla.append(row["ID_LEAGUE"])
 
             datos.append(maRalla)
             if(len(datos) % 1000):
                 self.signals.progress.emit(len(datos)/len(rows) + 15)
 
-        self.signals.data.emit(datos)
+        self.signals.data.emit([datos, minDate, maxDate, leagues])
         del db
 
 
@@ -195,6 +206,5 @@ class GetTeams(QRunnable):
     @pyqtSlot()
     def run(self):
         db = Database()
-        self.signals.data.emit(db.query("""SELECT LEAGUES.NAME, LEAGUE_PLAYED, LEAGUE_DRAWS FROM FIXTURES 
-                            JOIN LEAGUES ON ID_LEAGUE = LEAGUES.ID GROUP BY ID_LEAGUE"""))
+        self.signals.data.emit(db.query("""SELECT ID_LEAGUE, LEAGUE_PLAYED, LEAGUE_DRAWS FROM FIXTURES GROUP BY ID_LEAGUE"""))
         del db

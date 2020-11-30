@@ -1,14 +1,15 @@
 
-from PyQt5.QtCore import QSize, Qt, QThreadPool, pyqtSignal
+from PyQt5.QtCore import QSize, Qt, QThreadPool, pyqtSignal, QDate
 
 from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QMessageBox, QTableWidgetItem,
                              QMainWindow, QSlider, QWidget, QTableWidget, QVBoxLayout,
-                             QProgressBar, QGridLayout) 
+                             QProgressBar, QGridLayout, QDateEdit) 
 
 from PyQt5.QtGui import QColor
 from localDatabase import SaveDialog
 from threaded import Orderer, ChargeDatabase
 from dobleSlider import DobleSlider
+from leaguesDialog import LeaguesDialog
 import time
 from datetime import datetime, timedelta, date
 
@@ -18,7 +19,7 @@ class Filters(QMainWindow):
     sfecha = (datetime.today()+timedelta(days=1)).strftime('%Y%m%d')
     chargestring = """SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
                         HW, HD, HL, AW, AD, AL, GOALSGH, GOALSGA, GOALCGH, GOALCGA, REH, REA, REHH, REAA, HHW, HHD, HHL, 
-                        AAW, AAL, AAD FROM FIXTURES WHERE FTHG != -1 AND FTAG != -1 and DATE <"""
+                        AAW, AAL, AAD, ID_LEAGUE FROM FIXTURES WHERE FTHG != -1 AND FTAG != -1 and DATE <"""
     chargestring += sfecha
 
     #como se ven las progressBar
@@ -53,19 +54,19 @@ class Filters(QMainWindow):
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.filterProfile = QLabel("-")
         self.filterProfile.setStyleSheet("font-size: 15px; font-weight: bold; color: gray")
-        self.pghd        = QLabel("PGHD:        0%")
-        self.pgad        = QLabel("PGAD:        0%")
-        self.phd         = QLabel("PHD:         0%")
-        self.pad         = QLabel("PAD:         0%")
-        self.ppghome     = QLabel("PPGHome:      0")
-        self.ppgaway     = QLabel("PPGAway:      0")
-        self.tgpg        = QLabel("TGPG:       0-5")
-        self.pjhome      = QLabel("PJHome:       0")
-        self.pjaway      = QLabel("PJAway:       0")
-        self.rempate     = QLabel("REmpate:      0")
-        self.odd1        = QLabel("ODD1:       0-10")
-        self.odd2        = QLabel("ODD2:       0-10")
-        self.odd_under25 = QLabel("UNDER25:    0-10")
+        self.pghd        = QLabel("PGHD:          0%")
+        self.pgad        = QLabel("PGAD:          0%")
+        self.phd         = QLabel("PHD:           0%")
+        self.pad         = QLabel("PAD:           0%")
+        self.ppghome     = QLabel("PPGHome:        0")
+        self.ppgaway     = QLabel("PPGAway:        0")
+        self.tgpg        = QLabel("TGPG:     0.0-5.0")
+        self.pjhome      = QLabel("PJHome:         0")
+        self.pjaway      = QLabel("PJAway:         0")
+        self.rempate     = QLabel("REmpate:        0")
+        self.odd1        = QLabel("ODD1:    0.0-10.0")
+        self.odd2        = QLabel("ODD2:    0.0-10.0")
+        self.odd_under25 = QLabel("UNDER25: 0.0-10.0")
         
         self.aplicar = QPushButton("Aplicar")
         self.save = QPushButton("Save/Load")
@@ -73,6 +74,7 @@ class Filters(QMainWindow):
         self.binding = QPushButton("Copy to predictions")
         self.binding.setIcon(self.style().standardIcon(getattr(QStyle, "SP_CommandLink")))
         self.reset = QPushButton("Reset")
+        self.setleagues = QPushButton("Set leagues")
 
         self.ptajeBarPGHD = QSlider(Qt.Horizontal)
         self.ptajeBarPGAD = QSlider(Qt.Horizontal)
@@ -101,6 +103,19 @@ class Filters(QMainWindow):
         self.ptajeBarPJAway.setRange(0, 50)
         self.ptajeBarPJHome.setRange(0, 50)
         self.ptajeBarRempate.setRange(0, 10)
+
+        #fechas
+        self.labelFrom = QLabel("Dates from: ")
+        self.startDate = QDateEdit()
+        self.startDate.setCalendarPopup(True)
+        self.startDate.setMinimumDate(QDate(2010,1,1))
+        self.startDate.setMaximumDate(QDate(2030,12,31))
+        self.labelTo = QLabel("to: ")
+        self.labelTo.setAlignment(Qt.AlignHCenter)
+        self.endDate = QDateEdit()
+        self.endDate.setCalendarPopup(True)
+        self.endDate.setMinimumDate(QDate(2010,1,1))
+        self.endDate.setMaximumDate(QDate(2030,12,31))
 
         #widgets layout2
         self.resultados = QLabel("Resultados")
@@ -140,11 +155,16 @@ class Filters(QMainWindow):
         self.reset.clicked.connect(self.resetThigs)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
         self.table.verticalScrollBar().valueChanged.connect(self.printTheProgressBars)
+        self.setleagues.clicked.connect(self.leagueDialog)
+
+        self.startDate.dateChanged.connect(self.minorDate)
+        self.endDate.dateChanged.connect(self.minorDate)
         
         #databases y tal
         self.datos =[]
         self.currentDatos = self.datos
         self.listadeEmpates = [] 
+        self.leagues = []
 
         #threads
         self.threadpool = QThreadPool()
@@ -185,8 +205,13 @@ class Filters(QMainWindow):
         topLayout.addWidget(self.ptajeBarODD2, 7, 3, 1, 1)
         topLayout.addWidget(self.odd_under25, 8, 0, 1, 1)
         topLayout.addWidget(self.ptajeBarUNDER25, 8, 1, 1, 1)
+        topLayout.addWidget(self.labelFrom, 9, 0, 1, 1)
+        topLayout.addWidget(self.startDate, 9, 1, 1, 1)
+        topLayout.addWidget(self.labelTo, 9, 2, 1, 1)
+        topLayout.addWidget(self.endDate, 9, 3, 1, 1)
         topLayout.addWidget(self.progressBar, 2, 4, 1, 1)
-        topLayout.addWidget(self.reset, 8, 4, 1, 1)
+        topLayout.addWidget(self.reset, 7, 4, 1, 1)
+        topLayout.addWidget(self.setleagues, 9, 4, 1, 1)
   
         midLayout.addWidget(self.resultados, 0, 0, 1, 1)
         midLayout.addWidget(self.ptajeEmpates, 1, 0, 1, 1)
@@ -285,49 +310,51 @@ class Filters(QMainWindow):
             for elemento in self.datos:
                 contador+= 100
                 isIn = True
-                if not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGHD.value())):
+                if not(self.startDate.date() <= self.toDate(elemento[0]) and self.endDate.date() >= self.toDate(elemento[0])):
+                    isIn = False
+                elif not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGHD.value())):
                     isIn = False
 
-                if isIn and not(self.ptajeBarPGAD.value() <= 0 or (isinstance(elemento[6], float) and elemento[6] >= self.ptajeBarPGAD.value())):
+                elif not(self.ptajeBarPGAD.value() <= 0 or (isinstance(elemento[6], float) and elemento[6] >= self.ptajeBarPGAD.value())):
                     isIn = False
 
-                if isIn and not(self.ptajeBarPHD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPHD.value())):
+                elif not(self.ptajeBarPHD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPHD.value())):
                     isIn = False
 
-                if isIn and not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[8], float) and elemento[8] >= self.ptajeBarPAD.value())):
+                elif not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[8], float) and elemento[8] >= self.ptajeBarPAD.value())):
                     isIn = False
 
-                if isIn and not((self.ptajeBarTGPG.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
+                elif not((self.ptajeBarTGPG.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
                                  (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.getBigerThanHandler()
                                  and self.ptajeBarTGPG.getLessThanHandler() >= elemento[9]))):
                     isIn = False
 
-                if isIn and not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
+                elif not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
                     isIn = False
 
-                if isIn and not(self.ptajeBarPPGAway.value() <= 0 or (isinstance(elemento[11], float) and elemento[11] >= self.ptajeBarPPGAway.value())):
+                elif not(self.ptajeBarPPGAway.value() <= 0 or (isinstance(elemento[11], float) and elemento[11] >= self.ptajeBarPPGAway.value())):
                     isIn = False
 
-                if isIn and not(self.ptajeBarPJHome.value() <= 0 or elemento[12] >= self.ptajeBarPJHome.value()):
+                elif not(self.ptajeBarPJHome.value() <= 0 or elemento[12] >= self.ptajeBarPJHome.value()):
                     isIn = False
 
-                if isIn and not(self.ptajeBarPJAway.value() <= 0 or elemento[13] >= self.ptajeBarPJAway.value()):
+                elif isIn and not(self.ptajeBarPJAway.value() <= 0 or elemento[13] >= self.ptajeBarPJAway.value()):
                     isIn = False  
                 
-                if isIn and not(self.ptajeBarRempate.value() <= 0 or elemento[14]+elemento[15]+elemento[16]+elemento[17] >= self.ptajeBarRempate.value()):
+                elif not(self.ptajeBarRempate.value() <= 0 or elemento[14]+elemento[15]+elemento[16]+elemento[17] >= self.ptajeBarRempate.value()):
                     isIn = False
 
-                if isIn and not((self.ptajeBarODD1.getBigerThanHandler() <= 0 and (isinstance(elemento[18], str))) or (
+                elif not((self.ptajeBarODD1.getBigerThanHandler() <= 0 and (isinstance(elemento[18], str))) or (
                                  (isinstance(elemento[18], float) and elemento[18] >= self.ptajeBarODD1.getBigerThanHandler()
                                  and self.ptajeBarODD1.getLessThanHandler() >= elemento[18]))):
                     isIn = False
 
-                if isIn and not((self.ptajeBarODD2.getBigerThanHandler() <= 0 and (isinstance(elemento[19], str))) or (
+                elif not((self.ptajeBarODD2.getBigerThanHandler() <= 0 and (isinstance(elemento[19], str))) or (
                                  (isinstance(elemento[19], float) and elemento[19] >= self.ptajeBarODD2.getBigerThanHandler()
                                  and self.ptajeBarODD2.getLessThanHandler() >= elemento[19]))):
                     isIn = False  
                 
-                if isIn and not((self.ptajeBarUNDER25.getBigerThanHandler() <= 0 and (isinstance(elemento[20], str))) or (
+                elif not((self.ptajeBarUNDER25.getBigerThanHandler() <= 0 and (isinstance(elemento[20], str))) or (
                                  (isinstance(elemento[20], float) and elemento[20] >= self.ptajeBarUNDER25.getBigerThanHandler()
                                  and self.ptajeBarUNDER25.getLessThanHandler() >= elemento[20]))):
                     isIn = False
@@ -441,9 +468,11 @@ class Filters(QMainWindow):
 
 
     def loadedData(self, data):
-        self.datos = data
+        self.loadData.setEnabled(False)
+        self.datos = data[0]
         self.currentDatos = self.datos
         self.table.setRowCount(len(self.currentDatos))
+        self.leagues = data[3]
         fila = 0
         for row in self.currentDatos:
             self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
@@ -472,12 +501,18 @@ class Filters(QMainWindow):
             if(fila%500 == 0):
                 self.update_progress(int(fila/len(self.datos) * 50 +50))
 
+        
+        self.startDate.setMinimumDate(QDate(int(data[1][:4]), int(data[1][4:6]), int(data[1][6:])))
+        self.endDate.setDate(QDate(int(data[2][:4]), int(data[2][4:6]), int(data[2][6:])))
+        self.startDate.setDate(QDate(int(data[1][:4]), int(data[1][4:6]), int(data[1][6:])))
+        self.endDate.setMinimumDate(self.startDate.date())
+        self.startDate.setMaximumDate(self.endDate.date())
+        self.endDate.setMaximumDate(QDate(int(data[2][:4]), int(data[2][4:6]), int(data[2][6:])))
         self.progressBar.hide()
         self.loadData.setText("Load data")
         self.getActualEmpates()
         self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
         self.printTheProgressBars()
-
 
     def printTheProgressBars(self):
 
@@ -489,11 +524,9 @@ class Filters(QMainWindow):
 
             while fila >= 0 and fila <= end:   
                 if self.listadeEmpates[fila] == 1:
-                    for count in range(5):
-                        self.table.item(fila, count).setBackground(QColor("#50F570"))
+                    self.table.item(fila, 0).setBackground(QColor("#50F570"))
                 elif self.listadeEmpates[fila] == 2:
-                    for count in range(5):
-                        self.table.item(fila, count).setBackground(QColor("#fa7050"))
+                    self.table.item(fila, 0).setBackground(QColor("#fa7050"))
 
                 for col in range(5, self.table.columnCount()):
                     if isinstance(self.currentDatos[fila][col], float) or isinstance(self.currentDatos[fila][col], int):
@@ -565,6 +598,9 @@ class Filters(QMainWindow):
         self.ptajeBarODD2.reset()
         self.ptajeBarUNDER25.reset()
 
+        self.startDate.setDate(self.startDate.minimumDate())
+        self.endDate.setDate(self.startDate.maximumDate())
+
     def resizeEvent(self, event):#sobreescribimos el metodo
         self.printTheProgressBars()
         self.changeSize()
@@ -575,3 +611,127 @@ class Filters(QMainWindow):
         self.ptajeBarODD2.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
         self.ptajeBarUNDER25.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
         self.ptajeBarTGPG.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
+
+    def toDate(self, elemento):
+        return QDate(int(elemento[-4:]), int(elemento[3:5]), int( elemento[:2]))
+
+    def minorDate(self):
+        self.endDate.setMinimumDate(self.startDate.date())
+        self.startDate.setMaximumDate(self.endDate.date())
+
+    def leagueDialog(self):
+        if len(self.leagues) > 0:
+            dlg = LeaguesDialog(self.leagues)
+            dlg.setWindowTitle(" Leagues Shown")
+            dlg.data.connect(self.printe)
+            dlg.exec_()
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("Try to load the database")
+            msg.setWindowTitle("Database empty")
+            msg.exec_()
+
+    def printe(self, dats):
+        self.currentDatos = []
+        isIn = True
+        self.progressBar.setValue(0)
+        self.progressBar.show()
+        contador = 0
+        for elemento in self.datos:
+            contador+= 100
+            isIn = True
+            if not(self.startDate.date() <= self.toDate(elemento[0]) and self.endDate.date() >= self.toDate(elemento[0])):
+                isIn = False
+            elif not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGHD.value())):
+                isIn = False
+
+            elif not(self.ptajeBarPGAD.value() <= 0 or (isinstance(elemento[6], float) and elemento[6] >= self.ptajeBarPGAD.value())):
+                isIn = False
+
+            elif not(self.ptajeBarPHD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPHD.value())):
+                isIn = False
+
+            elif not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[8], float) and elemento[8] >= self.ptajeBarPAD.value())):
+                isIn = False
+
+            elif not((self.ptajeBarTGPG.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
+                                (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.getBigerThanHandler()
+                                and self.ptajeBarTGPG.getLessThanHandler() >= elemento[9]))):
+                isIn = False
+
+            elif not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
+                isIn = False
+
+            elif not(self.ptajeBarPPGAway.value() <= 0 or (isinstance(elemento[11], float) and elemento[11] >= self.ptajeBarPPGAway.value())):
+                isIn = False
+
+            elif not(self.ptajeBarPJHome.value() <= 0 or elemento[12] >= self.ptajeBarPJHome.value()):
+                isIn = False
+
+            elif isIn and not(self.ptajeBarPJAway.value() <= 0 or elemento[13] >= self.ptajeBarPJAway.value()):
+                isIn = False  
+            
+            elif not(self.ptajeBarRempate.value() <= 0 or elemento[14]+elemento[15]+elemento[16]+elemento[17] >= self.ptajeBarRempate.value()):
+                isIn = False
+
+            elif not((self.ptajeBarODD1.getBigerThanHandler() <= 0 and (isinstance(elemento[18], str))) or (
+                                (isinstance(elemento[18], float) and elemento[18] >= self.ptajeBarODD1.getBigerThanHandler()
+                                and self.ptajeBarODD1.getLessThanHandler() >= elemento[18]))):
+                isIn = False
+
+            elif not((self.ptajeBarODD2.getBigerThanHandler() <= 0 and (isinstance(elemento[19], str))) or (
+                                (isinstance(elemento[19], float) and elemento[19] >= self.ptajeBarODD2.getBigerThanHandler()
+                                and self.ptajeBarODD2.getLessThanHandler() >= elemento[19]))):
+                isIn = False  
+            
+            elif not((self.ptajeBarUNDER25.getBigerThanHandler() <= 0 and (isinstance(elemento[20], str))) or (
+                                (isinstance(elemento[20], float) and elemento[20] >= self.ptajeBarUNDER25.getBigerThanHandler()
+                                and self.ptajeBarUNDER25.getLessThanHandler() >= elemento[20]))):
+                isIn = False
+            
+            if  isIn:
+                self.currentDatos.append(elemento)
+            
+            if(contador%3000 == 0):
+                self.progressBar.setValue(contador/len(self.datos))
+            
+        self.progressBar.hide()
+        aux = []
+        for item in self.currentDatos:
+            if item[-1] in dats:
+                aux.append(item)
+        
+        self.currentDatos = aux
+        self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
+        self.table.clear()
+        self.table.setRowCount(len(self.currentDatos))
+        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
+            "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
+        fila = 0
+        for row in self.currentDatos:
+            self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
+            self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
+            self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
+            self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+            self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
+            self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
+            self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
+            self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
+            self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
+            self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
+            self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
+            self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
+            self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
+            self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
+            self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
+            self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
+            self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
+            self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
+            self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
+            self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
+            self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
+            fila +=1
+                
+        self.getActualEmpates()
+        self.printTheProgressBars()
