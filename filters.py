@@ -48,7 +48,6 @@ class Filters(QMainWindow):
         #creates widgets
         globalWidgets = QWidget()
         globalWidgets.setWindowTitle("Backtesting")
-        self.setStyleSheet("background-color: rgb(200,215,240); color: rgb(0, 0, 0); font-size: 14 ")
 
         #widgets layout1
         self.filtros = QLabel("Filtros")
@@ -133,14 +132,13 @@ class Filters(QMainWindow):
         self.loadData = QPushButton("Load data")
         self.table = QTableWidget()
         self.table.horizontalHeader().setSectionsClickable(True)
-        self.table.setStyleSheet("background-color: rgb(230,235,255)")
         self.table.setColumnCount(21)
         self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
             "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
             
         self.table.horizontalHeader().resizeSection(0, 90)
         self.table.horizontalHeader().resizeSection(1, 55)
-        self.table.horizontalHeader().resizeSection(4, 100)
+        self.table.horizontalHeader().resizeSection(4, 90)
 
         #conectores
         self.ptajeBarPGHD.valueChanged.connect(self.actualizarPGHD)

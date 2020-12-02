@@ -32,8 +32,6 @@ class Predictions(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        
-        self.setStyleSheet("background-color: rgb(230,190,170); color: rgb(0, 0, 0); font-size: 14 ")
 
         #creates widgets
         predictions = QWidget()
@@ -120,7 +118,6 @@ class Predictions(QMainWindow):
         self.table = QTableWidget()
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setSectionsClickable(True)
-        self.table.setStyleSheet("background-color: rgb(255,235,230)")
         self.table.setColumnCount(21) 
         self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
             "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
@@ -128,7 +125,7 @@ class Predictions(QMainWindow):
         
         self.table.horizontalHeader().resizeSection(0, 90)
         self.table.horizontalHeader().resizeSection(1, 55)
-        self.table.horizontalHeader().resizeSection(4, 100)
+        self.table.horizontalHeader().resizeSection(4, 90)
 
         #databases y tal
         self.datos =[]

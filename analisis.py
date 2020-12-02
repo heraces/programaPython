@@ -12,7 +12,6 @@ class Analisis(QMainWindow):
         #creates widgets
         analisis = QWidget()
         analisis.setWindowTitle("Pinacle")
-        self.setStyleSheet("background-color: rgb(140,200,190); color: rgb(0, 0, 0); font-size: 14 ")
 
         #widgets odds
         self.odds = QLabel("Odds")

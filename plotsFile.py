@@ -21,7 +21,6 @@ class MplCanvas(FigureCanvasQTAgg):
 class Plots(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setStyleSheet("background-color: rgb(200,250,230); color: rgb(0, 0, 0); font-size: 14 ")
         #widgets
         self.numberResuts = QLabel("Number of Resutls: ")
         self.plot = QPushButton("Plot")

@@ -4,8 +4,6 @@ from PyQt5.QtCore import QSize, Qt
 class AnaliticsDialog(QDialog):
     def __init__(self, row):
         super().__init__()
-
-        self.setStyleSheet("background-color: rgb(80,110,120); color: white; font-size: 14 ")
         #widgets
         homeTeam = QLabel(row[2])
         homeTeam.setStyleSheet("font-size: 20px; font-weight: bold;")
