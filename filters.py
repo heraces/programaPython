@@ -10,6 +10,7 @@ from localDatabase import SaveDialog
 from threaded import Orderer, ChargeDatabase
 from dobleSlider import DobleSlider
 from leaguesDialog import LeaguesDialog
+from analiticsDialog import AnaliticsDialog
 import time
 from datetime import datetime, timedelta, date
 
@@ -47,7 +48,7 @@ class Filters(QMainWindow):
         #creates widgets
         globalWidgets = QWidget()
         globalWidgets.setWindowTitle("Backtesting")
-        self.setStyleSheet("background-color: rgb(200,215,240)")
+        self.setStyleSheet("background-color: rgb(200,215,240); color: rgb(0, 0, 0); font-size: 14 ")
 
         #widgets layout1
         self.filtros = QLabel("Filtros")
@@ -136,6 +137,10 @@ class Filters(QMainWindow):
         self.table.setColumnCount(21)
         self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
             "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
+            
+        self.table.horizontalHeader().resizeSection(0, 90)
+        self.table.horizontalHeader().resizeSection(1, 55)
+        self.table.horizontalHeader().resizeSection(4, 100)
 
         #conectores
         self.ptajeBarPGHD.valueChanged.connect(self.actualizarPGHD)
@@ -155,6 +160,7 @@ class Filters(QMainWindow):
         self.reset.clicked.connect(self.resetThigs)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
         self.table.verticalScrollBar().valueChanged.connect(self.printTheProgressBars)
+        self.table.itemClicked.connect(self.gimmeDaAnalisis)
         self.setleagues.clicked.connect(self.leagueDialog)
 
         self.startDate.dateChanged.connect(self.minorDate)
@@ -735,3 +741,8 @@ class Filters(QMainWindow):
                 
         self.getActualEmpates()
         self.printTheProgressBars()
+
+    def gimmeDaAnalisis(self):
+        dlg = AnaliticsDialog(self.currentDatos[self.table.currentRow()])
+        dlg.setWindowTitle("Game Statistics")
+        dlg.exec_()

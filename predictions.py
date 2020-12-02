@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSize, Qt, pyqtSignal, QThreadPool, QDate
 from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QProgressBar, QMessageBox,
                              QMainWindow, QSlider, QWidget, QTableWidget, QTableWidgetItem,
-                             QVBoxLayout, QGridLayout, QDateEdit)
+                             QVBoxLayout, QGridLayout, QDateEdit, QHeaderView)
                                                           
 from PyQt5.QtGui import QColor
 from threaded import Orderer, ChargeDatabase
@@ -33,7 +33,7 @@ class Predictions(QMainWindow):
     def __init__(self):
         super().__init__()
         
-        self.setStyleSheet("background-color: rgb(240,190,220)")
+        self.setStyleSheet("background-color: rgb(230,190,170); color: rgb(0, 0, 0); font-size: 14 ")
 
         #creates widgets
         predictions = QWidget()
@@ -121,9 +121,14 @@ class Predictions(QMainWindow):
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setSectionsClickable(True)
         self.table.setStyleSheet("background-color: rgb(255,235,230)")
-        self.table.setColumnCount(21)
-        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
-             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
+        self.table.setColumnCount(21) 
+        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
+            "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
+
+        
+        self.table.horizontalHeader().resizeSection(0, 90)
+        self.table.horizontalHeader().resizeSection(1, 55)
+        self.table.horizontalHeader().resizeSection(4, 100)
 
         #databases y tal
         self.datos =[]
@@ -273,10 +278,7 @@ class Predictions(QMainWindow):
     def endBar(self):
         self.table.setRowCount(len(self.currentDatos))
         self.progressBar.hide()
-        self.table.clear()
-        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD", "PGAD", "PHD", "PAD",
-            "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
-        fila = 0
+        self.table.clearContents()
         for row in self.currentDatos:
             self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
             self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
@@ -424,6 +426,7 @@ class Predictions(QMainWindow):
             if(fila%100 == 0):
                 self.update_progress(int(fila/len(self.datos) * 50 +50))
 
+        #ajustamos los handlers de fecha
         self.startDate.setMinimumDate(QDate(int(data[1][:4]), int(data[1][4:6]), int(data[1][6:])))
         self.endDate.setDate(QDate(int(data[2][:4]), int(data[2][4:6]), int(data[2][6:])))
         self.startDate.setDate(QDate(int(data[1][:4]), int(data[1][4:6]), int(data[1][6:])))
@@ -528,10 +531,8 @@ class Predictions(QMainWindow):
                 
             self.progressBar.hide()
             self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
-            self.table.clear()
+            self.table.clearContents()
             self.table.setRowCount(len(self.currentDatos))
-            self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team", "PGHD %", "PGAD %", "PHD %", "PAD %",
-             "Resultado", "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REmpate", "ODD1", "ODD2", "ODD UNDER 25"])
             fila = 0
             for row in self.currentDatos:
                 self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
@@ -688,10 +689,8 @@ class Predictions(QMainWindow):
         
         self.currentDatos = aux
         self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
-        self.table.clear()
+        self.table.clearContents()
         self.table.setRowCount(len(self.currentDatos))
-        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
-            "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
         fila = 0
         for row in self.currentDatos:
             self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))

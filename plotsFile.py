@@ -21,7 +21,7 @@ class MplCanvas(FigureCanvasQTAgg):
 class Plots(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setStyleSheet("background-color: rgb(200,250,230)")
+        self.setStyleSheet("background-color: rgb(200,250,230); color: rgb(0, 0, 0); font-size: 14 ")
         #widgets
         self.numberResuts = QLabel("Number of Resutls: ")
         self.plot = QPushButton("Plot")
@@ -95,4 +95,9 @@ class Plots(QMainWindow):
         self.fig.axes.set_xlabel("Draw %")
         self.fig.axes.set_ylabel("Leagues")
         self.fig.axes.barh(self.datos[1][:self.cant.itemData(self.cant.currentIndex())], self.datos[0][:self.cant.itemData(self.cant.currentIndex())])
+        for p in self.fig.axes.patches:
+            percentage = '{:.1f}%'.format(100 * p.get_width()/100)
+            x = p.get_x() + p.get_width() + 0.02
+            y = p.get_y() + p.get_height()/2
+            self.fig.axes.annotate(percentage, (x, y))
         self.fig.draw()

@@ -5,6 +5,7 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QMainWindow, QTabWidget, QApplication, QStyle
 from plotsFile import Plots
 from predictions import Predictions
+from analisis import Analisis
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -14,6 +15,7 @@ class MainWindow(QMainWindow):
         self.globalWidgets = Filters()
         self.predictions = Predictions()
         self.plotlWidgets = Plots()
+        self.analisis = Analisis()
 
         self.widget = QTabWidget()
         self.widget.setWindowTitle("Football stuff")
@@ -23,6 +25,7 @@ class MainWindow(QMainWindow):
         self.widget.addTab(self.globalWidgets, "Backtesting")
         self.widget.addTab(self.predictions, "Partidos futuros")
         self.widget.addTab(self.plotlWidgets, "Leagues Ratio")
+        self.widget.addTab(self.analisis, "Pinacle")
 
         self.globalWidgets.filterValues.connect(self.predictions.copyingToPredictions)
         self.predictions.testingValues.connect(self.globalWidgets.copyingTofilters)
@@ -36,7 +39,9 @@ class MainWindow(QMainWindow):
         if self.widget.currentIndex() == self.widget.indexOf(self.globalWidgets):
             self.globalWidgets.changeSize()
         elif self.widget.currentIndex() == self.widget.indexOf(self.predictions):
-            self.predictions.changeSize()
+            self.predictions.changeSize()          
+        elif self.widget.currentIndex() == self.widget.indexOf(self.analisis):
+            self.analisis.changeSize()
 
 app = QApplication(sys.argv)
 window = MainWindow()

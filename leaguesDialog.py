@@ -7,7 +7,6 @@ class LeaguesDialog(QDialog):
     def __init__(self, leagues):
         super().__init__()
         #datos 
-        data = pyqtSignal(list)
         self.maLeages = []
         leaguesAux = leagues #para ordenar la lista easy
         leaguesAux.sort()
