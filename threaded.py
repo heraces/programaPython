@@ -65,7 +65,7 @@ class ChargeDatabase(QRunnable):
         datos =[]
         db = Database()
         rows = db.query(self.query)
-        self.signals.progress.emit(+15)
+        self.signals.progress.emit(50)
         self.teams = db.query("SELECT * FROM TEAMS ORDER BY ascii(ID) ASC")
 
         minDate = rows[0]["DATE"]
@@ -106,7 +106,7 @@ class ChargeDatabase(QRunnable):
 
             datos.append(maRalla)
             if(len(datos) % 1000):
-                self.signals.progress.emit(len(datos)/len(rows) + 15)
+                self.signals.progress.emit(len(datos)/len(rows)*50 + 50)
 
         self.signals.data.emit([datos, minDate, maxDate, leagues])
         del db

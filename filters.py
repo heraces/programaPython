@@ -11,6 +11,7 @@ from threaded import Orderer, ChargeDatabase
 from dobleSlider import DobleSlider
 from leaguesDialog import LeaguesDialog
 from analiticsDialog import AnaliticsDialog
+from maTable import CustomTableWidget
 import time
 from datetime import datetime, timedelta, date
 
@@ -126,19 +127,10 @@ class Filters(QMainWindow):
         self.empates = QLabel("0 Empates")
         self.partidos = QLabel("0 Partidos")
         self.empatesNum = 0
-        
 
         #Tabla
         self.loadData = QPushButton("Load data")
-        self.table = QTableWidget()
-        self.table.horizontalHeader().setSectionsClickable(True)
-        self.table.setColumnCount(21)
-        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
-            "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
-            
-        self.table.horizontalHeader().resizeSection(0, 90)
-        self.table.horizontalHeader().resizeSection(1, 55)
-        self.table.horizontalHeader().resizeSection(4, 90)
+        self.table = CustomTableWidget()
 
         #conectores
         self.ptajeBarPGHD.valueChanged.connect(self.actualizarPGHD)
@@ -163,7 +155,7 @@ class Filters(QMainWindow):
 
         self.startDate.dateChanged.connect(self.minorDate)
         self.endDate.dateChanged.connect(self.minorDate)
-        
+
         #databases y tal
         self.datos =[]
         self.currentDatos = self.datos
@@ -462,6 +454,7 @@ class Filters(QMainWindow):
 
     def loadDatabase(self):
         self.loadData.setText("Loading...")
+        self.loadData.setEnabled(False)
         self.progressBar.setValue(0)
         self.progressBar.show()
 
@@ -472,39 +465,12 @@ class Filters(QMainWindow):
 
 
     def loadedData(self, data):
-        self.loadData.setEnabled(False)
+        
+        self.progressBar.hide()
         self.datos = data[0]
         self.currentDatos = self.datos
-        self.table.setRowCount(len(self.currentDatos))
+        self.table.setItems(self.currentDatos)
         self.leagues = data[3]
-        fila = 0
-        for row in self.currentDatos:
-            self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
-            self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
-            self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
-            self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
-            self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
-            self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
-            self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
-            self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
-            self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
-            self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
-            self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
-            self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
-            self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
-            self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
-            self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
-            self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
-            self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
-            self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
-            self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
-            self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
-            self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
-
-            fila += 1
-            if(fila%500 == 0):
-                self.update_progress(int(fila/len(self.datos) * 50 +50))
-
         
         self.startDate.setMinimumDate(QDate(int(data[1][:4]), int(data[1][4:6]), int(data[1][6:])))
         self.endDate.setDate(QDate(int(data[2][:4]), int(data[2][4:6]), int(data[2][6:])))
@@ -512,14 +478,12 @@ class Filters(QMainWindow):
         self.endDate.setMinimumDate(self.startDate.date())
         self.startDate.setMaximumDate(self.endDate.date())
         self.endDate.setMaximumDate(QDate(int(data[2][:4]), int(data[2][4:6]), int(data[2][6:])))
-        self.progressBar.hide()
         self.loadData.setText("Load data")
         self.getActualEmpates()
         self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
         self.printTheProgressBars()
 
     def printTheProgressBars(self):
-
         if len(self.currentDatos) > 0:
             fila = self.table.rowAt(0)
             end = self.table.rowAt(self.table.height())
@@ -528,9 +492,9 @@ class Filters(QMainWindow):
 
             while fila >= 0 and fila <= end:   
                 if self.listadeEmpates[fila] == 1:
-                    self.table.item(fila, 0).setBackground(QColor("#50F570"))
+                    self.table.secondTable.item(fila, 0).setBackground(QColor("#50F570"))
                 elif self.listadeEmpates[fila] == 2:
-                    self.table.item(fila, 0).setBackground(QColor("#fa7050"))
+                    self.table.secondTable.item(fila, 0).setBackground(QColor("#fa7050"))
 
                 for col in range(5, self.table.columnCount()):
                     if isinstance(self.currentDatos[fila][col], float) or isinstance(self.currentDatos[fila][col], int):

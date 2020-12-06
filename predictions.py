@@ -8,6 +8,7 @@ from threaded import Orderer, ChargeDatabase
 from localDatabase import SaveDialog
 from dobleSlider import DobleSlider
 from leaguesDialog import LeaguesDialog
+from maTable import CustomTableWidget
 import time
 from datetime import datetime, timedelta, date
 
@@ -115,17 +116,7 @@ class Predictions(QMainWindow):
         
         #Tabla
         self.loadData = QPushButton("Load Data")
-        self.table = QTableWidget()
-        self.table.setSortingEnabled(True)
-        self.table.horizontalHeader().setSectionsClickable(True)
-        self.table.setColumnCount(21) 
-        self.table.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
-            "TGPG", "PPGHome", "PPGAway", "PJHome", "PJAway", "REH", "REA","REHH","REAA", "ODD1", "ODD2", "ODD UNDER 25"])
-
-        
-        self.table.horizontalHeader().resizeSection(0, 90)
-        self.table.horizontalHeader().resizeSection(1, 55)
-        self.table.horizontalHeader().resizeSection(4, 90)
+        self.table = CustomTableWidget()
 
         #databases y tal
         self.datos =[]
@@ -380,6 +371,7 @@ class Predictions(QMainWindow):
             
     def loadDatabase(self):
         self.loadData.setText("Loading...")
+        self.loadData.setEnabled(False)
         self.progressBar.setValue(0)
         self.progressBar.show()
 
@@ -390,38 +382,11 @@ class Predictions(QMainWindow):
 
 
     def loadedData(self, data):
-        self.loadData.setEnabled(False)
+        self.progressBar.hide()
         self.datos = data[0]
         self.currentDatos = self.datos
-        self.table.setRowCount(len(self.currentDatos))
+        self.table.setItems(self.currentDatos)
         self.leagues = data[3]
-        fila = 0
-        for row in self.currentDatos:
-            self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
-            self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
-            self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
-            self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
-            self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
-            self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
-            self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
-            self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
-            self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
-            self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
-            self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
-            self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
-            self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
-            self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
-            self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
-            self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
-            self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
-            self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
-            self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
-            self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
-            self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
-
-            fila += 1
-            if(fila%100 == 0):
-                self.update_progress(int(fila/len(self.datos) * 50 +50))
 
         #ajustamos los handlers de fecha
         self.startDate.setMinimumDate(QDate(int(data[1][:4]), int(data[1][4:6]), int(data[1][6:])))
