@@ -5,8 +5,11 @@ from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QMessageBox, QTableWid
                              QProgressBar, QHBoxLayout, QCheckBox) 
 
 from dobleSlider import DobleSlider
+from datetime import datetime, timedelta
 
 class Analisis(QMainWindow):
+    #la fecha solo el dia
+    sfecha = (datetime.today()+timedelta(days=1)).strftime('%Y%m%d')
     def __init__(self):
         super().__init__()
         #creates widgets
@@ -34,7 +37,7 @@ class Analisis(QMainWindow):
         self.onlyToday = QCheckBox("Only Today")
         #boton
         self.cargar = QPushButton("Load/Refresh")
-        self.cargar.clicked.connect(self.cargarMAtches)
+        self.cargar.clicked.connect(self.cargarMatches)
 
         #progres bar
         self.progressBar = QProgressBar()
@@ -44,7 +47,6 @@ class Analisis(QMainWindow):
         self.matches = QLabel("Matches")
         self.matches.setStyleSheet("font-size: 18px; font-weight: bold;")
         self.table = QTableWidget()
-
 
         #layout
         self.widget = QWidget()
@@ -78,17 +80,21 @@ class Analisis(QMainWindow):
         self.setCentralWidget(self.widget)
 
 
-    def cargarMAtches(self):
+    def cargarMatches(self):
         self.cargar.setEnabled(False)
         self.cargar.setText("Loading...")
         self.progressBar.setValue(0)
         self.progressBar.show()
 
-        
+        datos = []#datos ya cargados
+        self.loadIntoTable(datos)
+
         self.cargar.setEnabled(True)
         self.progressBar.hide()
         self.cargar.setText("Load/Refresh")
 
+    def loadIntoTable(self, datos):
+        aux = []
     
     def changeSize(self):
         self.ptajeBarODD1.resizeWidth( width = self.widget.width()/10*9, height = self.ptajeBarODD1.height)

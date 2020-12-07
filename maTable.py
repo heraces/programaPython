@@ -3,10 +3,9 @@ from PyQt5.QtCore import Qt
 
 
 class CustomTableWidget(QTableWidget):
-    def __init__(self, datos = None):
+    def __init__(self):
         super(CustomTableWidget, self).__init__()
         #creamos la tablewidget como hicimos antes
-        self.datos = datos
         self.horizontalHeader().setSectionsClickable(True)
         self.setColumnCount(21)
         self.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado", "PGHD", "PGAD", "PHD", "PAD",
@@ -19,7 +18,7 @@ class CustomTableWidget(QTableWidget):
 
         #second table
         self.secondTable = QTableWidget(self)        
-        self.secondTable.setColumnCount(6)
+        self.secondTable.setColumnCount(5)
         self.secondTable.setHorizontalHeaderLabels(["Date", "Time", "Home team", "Away team",  "Resultado"])
         self.secondTable.horizontalHeader().resizeSection(0, 90)
         self.secondTable.horizontalHeader().resizeSection(1, 55)
@@ -84,12 +83,11 @@ class CustomTableWidget(QTableWidget):
    
 
     def setItems(self, datos):
-        self.datos = datos
-        self.setRowCount(len(self.datos))
-        self.secondTable.setRowCount(len(self.datos))
+        self.setRowCount(len(datos))
+        self.secondTable.setRowCount(len(datos))
 
         fila = 0
-        for row in self.datos:
+        for row in datos:
             self.secondTable.setItem(fila, 0, QTableWidgetItem(str(row[0])))
             self.secondTable.setItem(fila, 1, QTableWidgetItem(str(row[1])))
             self.secondTable.setItem(fila, 2, QTableWidgetItem(str(row[2])))

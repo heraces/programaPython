@@ -11,6 +11,7 @@ from leaguesDialog import LeaguesDialog
 from maTable import CustomTableWidget
 import time
 from datetime import datetime, timedelta, date
+import webbrowser
 
 class Predictions(QMainWindow):
     testingValues = pyqtSignal(list)
@@ -20,14 +21,15 @@ class Predictions(QMainWindow):
                         AAW, AAL, AAD, ID_LEAGUE FROM FIXTURES WHERE FTHG = -1 and FTAG = -1 and DATE >="""
     chargestring += sfecha
 
-    style1 =  """QProgressBar {background-color: rgb(200, 255, 240);
-                           border-style: outset;
+    style1 =  """QProgressBar {border-style: outset;
                            border-width: 2px;
                            border-color: #74c8ff;
                            border-radius: 9px;
-                           border-width: 2px;} 
+                           border-width: 2px;
+                           font-weight: bold;}
                            QProgressBar::chunk:horizontal{ background: rgb(20,220,100);
-                           border-radius: 9px;}"""
+                           border-radius: 9px;}"""    
+                           
     #tamaño maximo de cada progressbar
     max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 10, 10, 50, 50, 10, 10, 10, 10, 10, 10,10,10]
 
@@ -146,6 +148,7 @@ class Predictions(QMainWindow):
         self.aplicar.clicked.connect(self.aplicarResultado)
         self.reset.clicked.connect(self.resetThigs)
         self.setleagues.clicked.connect(self.leagueDialog)
+        self.table.secondTable.itemClicked.connect(self.openBrowser)
 
         self.startDate.dateChanged.connect(self.minorDate)
         self.endDate.dateChanged.connect(self.minorDate)
@@ -264,32 +267,10 @@ class Predictions(QMainWindow):
         self.progressBar.setValue(progress)
 
     def endBar(self):
-        self.table.setRowCount(len(self.currentDatos))
         self.progressBar.hide()
         self.table.clearContents()
-        for row in self.currentDatos:
-            self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
-            self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
-            self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
-            self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
-            self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
-            self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
-            self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
-            self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
-            self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
-            self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
-            self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
-            self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
-            self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
-            self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
-            self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
-            self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
-            self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
-            self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
-            self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
-            self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
-            self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
-            fila +=1
+
+        self.table.setItems(self.currentDatos)
             
         self.getActualEmpates()
         self.printTheProgressBars()
@@ -451,8 +432,8 @@ class Predictions(QMainWindow):
                     isIn = False
 
                 elif not((self.ptajeBarTGPG.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
-                                 (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.getBigerThanHandler()
-                                 and self.ptajeBarTGPG.getLessThanHandler() >= elemento[9]))):
+                                (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.getBigerThanHandler()
+                                and self.ptajeBarTGPG.getLessThanHandler() >= elemento[9]))):
                     isIn = False
 
                 elif not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
@@ -471,18 +452,18 @@ class Predictions(QMainWindow):
                     isIn = False
 
                 elif not((self.ptajeBarODD1.getBigerThanHandler() <= 0 and (isinstance(elemento[18], str))) or (
-                                 (isinstance(elemento[18], float) and elemento[18] >= self.ptajeBarODD1.getBigerThanHandler()
-                                 and self.ptajeBarODD1.getLessThanHandler() >= elemento[18]))):
+                                    (isinstance(elemento[18], float) and elemento[18] >= self.ptajeBarODD1.getBigerThanHandler()
+                                    and self.ptajeBarODD1.getLessThanHandler() >= elemento[18]))):
                     isIn = False
 
                 elif not((self.ptajeBarODD2.getBigerThanHandler() <= 0 and (isinstance(elemento[19], str))) or (
-                                 (isinstance(elemento[19], float) and elemento[19] >= self.ptajeBarODD2.getBigerThanHandler()
-                                 and self.ptajeBarODD2.getLessThanHandler() >= elemento[19]))):
+                                    (isinstance(elemento[19], float) and elemento[19] >= self.ptajeBarODD2.getBigerThanHandler()
+                                    and self.ptajeBarODD2.getLessThanHandler() >= elemento[19]))):
                     isIn = False  
                 
                 elif not((self.ptajeBarUNDER25.getBigerThanHandler() <= 0 and (isinstance(elemento[20], str))) or (
-                                 (isinstance(elemento[20], float) and elemento[20] >= self.ptajeBarUNDER25.getBigerThanHandler()
-                                 and self.ptajeBarUNDER25.getLessThanHandler() >= elemento[20]))):
+                                    (isinstance(elemento[20], float) and elemento[20] >= self.ptajeBarUNDER25.getBigerThanHandler()
+                                    and self.ptajeBarUNDER25.getLessThanHandler() >= elemento[20]))):
                     isIn = False
                 
                 if  isIn:
@@ -494,31 +475,8 @@ class Predictions(QMainWindow):
             self.progressBar.hide()
             self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
             self.table.clearContents()
-            self.table.setRowCount(len(self.currentDatos))
-            fila = 0
-            for row in self.currentDatos:
-                self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
-                self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
-                self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
-                self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
-                self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
-                self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
-                self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
-                self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
-                self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
-                self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
-                self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
-                self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
-                self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
-                self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
-                self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
-                self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
-                self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
-                self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
-                self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
-                self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
-                self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
-                fila +=1
+            
+            self.table.setItems(self.currentDatos)
                 
             self.getActualEmpates()
             self.printTheProgressBars()
@@ -604,7 +562,7 @@ class Predictions(QMainWindow):
 
             elif not((self.ptajeBarTGPG.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
                                 (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.getBigerThanHandler()
-                                and self.ptajeBarTGPG.getLessThanHandler() >= elemento[9]))):
+                                and (self.ptajeBarTGPG.getLessThanHandler() >= elemento[9] or self.ptajeBarTGPG.isMaxLessHandler())))):
                 isIn = False
 
             elif not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
@@ -624,17 +582,17 @@ class Predictions(QMainWindow):
 
             elif not((self.ptajeBarODD1.getBigerThanHandler() <= 0 and (isinstance(elemento[18], str))) or (
                                 (isinstance(elemento[18], float) and elemento[18] >= self.ptajeBarODD1.getBigerThanHandler()
-                                and self.ptajeBarODD1.getLessThanHandler() >= elemento[18]))):
+                                and (self.ptajeBarODD1.getLessThanHandler() >= elemento[18] or self.ptajeBarODD1.isMaxLessHandler())))):
                 isIn = False
 
             elif not((self.ptajeBarODD2.getBigerThanHandler() <= 0 and (isinstance(elemento[19], str))) or (
                                 (isinstance(elemento[19], float) and elemento[19] >= self.ptajeBarODD2.getBigerThanHandler()
-                                and self.ptajeBarODD2.getLessThanHandler() >= elemento[19]))):
+                                and (self.ptajeBarODD2.getLessThanHandler() >= elemento[19] or self.ptajeBarODD2.isMaxLessHandler())))):
                 isIn = False  
             
             elif not((self.ptajeBarUNDER25.getBigerThanHandler() <= 0 and (isinstance(elemento[20], str))) or (
                                 (isinstance(elemento[20], float) and elemento[20] >= self.ptajeBarUNDER25.getBigerThanHandler()
-                                and self.ptajeBarUNDER25.getLessThanHandler() >= elemento[20]))):
+                                and (self.ptajeBarUNDER25.getLessThanHandler() >= elemento[20] or self.ptajeBarUNDER25.isMaxLessHandler())))):
                 isIn = False
             
             if  isIn:
@@ -645,38 +603,21 @@ class Predictions(QMainWindow):
             
         self.progressBar.hide()
         aux = []
+
         for item in self.currentDatos:
             if item[-1] in dats:
                 aux.append(item)
+            contador += 1
+            self.progressBar.setValue(contador/len(self.currentDatos) * 100)
         
         self.currentDatos = aux
         self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
         self.table.clearContents()
-        self.table.setRowCount(len(self.currentDatos))
-        fila = 0
-        for row in self.currentDatos:
-            self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
-            self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
-            self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
-            self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
-            self.table.setItem(fila, 4, QTableWidgetItem(str(row[4])))
-            self.table.setItem(fila, 5, QTableWidgetItem(str(row[5])))
-            self.table.setItem(fila, 6, QTableWidgetItem(str(row[6])))
-            self.table.setItem(fila, 7, QTableWidgetItem(str(row[7])))
-            self.table.setItem(fila, 8, QTableWidgetItem(str(row[8])))
-            self.table.setItem(fila, 9, QTableWidgetItem(str(row[9])))
-            self.table.setItem(fila, 10, QTableWidgetItem(str(row[10])))
-            self.table.setItem(fila, 11, QTableWidgetItem(str(row[11])))
-            self.table.setItem(fila, 12, QTableWidgetItem(str(row[12])))
-            self.table.setItem(fila, 13, QTableWidgetItem(str(row[13])))
-            self.table.setItem(fila, 14, QTableWidgetItem(str(row[14])))
-            self.table.setItem(fila, 15, QTableWidgetItem(str(row[15])))
-            self.table.setItem(fila, 16, QTableWidgetItem(str(row[16])))
-            self.table.setItem(fila, 17, QTableWidgetItem(str(row[17])))
-            self.table.setItem(fila, 18, QTableWidgetItem(str(row[18])))
-            self.table.setItem(fila, 19, QTableWidgetItem(str(row[19])))
-            self.table.setItem(fila, 20, QTableWidgetItem(str(row[20])))
-            fila +=1
+        self.table.setItems(self.currentDatos)
                 
         self.getActualEmpates()
         self.printTheProgressBars()
+
+    def openBrowser(self, item):
+        if self.table.secondTable.column(item) == 0:
+            webbrowser.open("http://www.python.org", new=2, autoraise=True)
