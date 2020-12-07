@@ -1,7 +1,7 @@
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from PyQt5.QtGui import QPainter, QBrush, QPen
-from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtCore import Qt
  
  
 class DobleSlider(QWidget):

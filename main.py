@@ -5,12 +5,12 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QMainWindow, QTabWidget, QApplication, QStyle
 from plotsFile import Plots
 from predictions import Predictions
-from analisis import Analisis
+from pinacle import Analisis
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        self.setWindowTitle("Football statistics")
         self.setWindowIcon(self.style().standardIcon(getattr(QStyle, "SP_DesktopIcon")))
         self.globalWidgets = Filters()
         self.predictions = Predictions()

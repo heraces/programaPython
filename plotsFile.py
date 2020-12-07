@@ -1,6 +1,6 @@
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox, QHBoxLayout
-from PyQt5.QtCore import QSize, QThreadPool
+from PyQt5.QtCore import QThreadPool
 from threaded import GetTeams
 
 import matplotlib

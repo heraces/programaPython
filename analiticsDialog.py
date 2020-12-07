@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QDialog, QLabel, QWidget, QGridLayout
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QDialog, QLabel, QGridLayout
 from PyQt5.QtCore import QSize, Qt
 
 class AnaliticsDialog(QDialog):

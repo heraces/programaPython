@@ -117,10 +117,4 @@ class CustomTableWidget(QTableWidget):
             self.setItem(fila, 20, QTableWidgetItem(str(row[20])))
 
             fila += 1
-                     
-
-        #creamos modelo
         self.secondTable.show()
-
-    def daColor(self, lista):
-        pass

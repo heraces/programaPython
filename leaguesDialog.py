@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QCheckBox, QDialog, QGridLayout, QScrollArea, QWidget
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
 
 class LeaguesDialog(QDialog):
     data = pyqtSignal(list)

@@ -1,7 +1,6 @@
-from PyQt5.QtCore import QSize, Qt, pyqtSignal, QThreadPool, QDate
+from PyQt5.QtCore import Qt, pyqtSignal, QThreadPool, QDate
 from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QProgressBar, QMessageBox,
-                             QMainWindow, QSlider, QWidget, QTableWidget, QTableWidgetItem,
-                             QVBoxLayout, QGridLayout, QDateEdit, QHeaderView)
+                             QMainWindow, QSlider, QWidget, QVBoxLayout, QGridLayout, QDateEdit)
                                                           
 from PyQt5.QtGui import QColor
 from threaded import Orderer, ChargeDatabase
@@ -31,16 +30,16 @@ class Predictions(QMainWindow):
                            border-radius: 9px;}"""    
                            
     #tamaño maximo de cada progressbar
-    max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 10, 10, 50, 50, 10, 10, 10, 10, 10, 10,10,10]
+    max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 10, 10, 50, 50, 10, 10, 10, 10, 10, 10, 10, 10]
 
     def __init__(self):
         super().__init__()
 
         #creates widgets
         predictions = QWidget()
-        predictions.setWindowTitle("Predictions")
 
         #widgets layout1
+        #labels
         self.filtros = QLabel("Filtros")
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.filterProfile = QLabel("-")
@@ -59,6 +58,7 @@ class Predictions(QMainWindow):
         self.odd2        = QLabel("ODD2:    0.0-10.0")
         self.odd_under25 = QLabel("UNDER25: 0.0-10.0")
 
+        #buttons
         self.aplicar = QPushButton("Aplicar")
         self.save = QPushButton("Save/Load")
         self.save.setIcon(self.style().standardIcon(getattr(QStyle, "SP_DialogSaveButton")))
@@ -67,6 +67,7 @@ class Predictions(QMainWindow):
         self.reset = QPushButton("Reset")
         self.setleagues = QPushButton("Set leagues")
 
+        #ptajes
         self.ptajeBarPGHD = QSlider(Qt.Horizontal)
         self.ptajeBarPGAD = QSlider(Qt.Horizontal)
         self.ptajeBarPHD = QSlider(Qt.Horizontal)

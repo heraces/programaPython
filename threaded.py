@@ -103,6 +103,7 @@ class ChargeDatabase(QRunnable):
             maRalla.append(row["ODDS_2"])
             maRalla.append(row["ODDS_UNDER25FT"])
             maRalla.append(row["ID_LEAGUE"])
+            maRalla.append(row["ID"])
 
             datos.append(maRalla)
             if(len(datos) % 1000):

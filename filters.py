@@ -1,9 +1,8 @@
 
-from PyQt5.QtCore import QSize, Qt, QThreadPool, pyqtSignal, QDate
+from PyQt5.QtCore import Qt, QThreadPool, pyqtSignal, QDate
 
-from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QMessageBox, QTableWidgetItem,
-                             QMainWindow, QSlider, QWidget, QTableWidget, QVBoxLayout,
-                             QProgressBar, QGridLayout, QDateEdit) 
+from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QMessageBox, QMainWindow, QSlider, QWidget, 
+                            QVBoxLayout, QProgressBar, QGridLayout, QDateEdit, QListWidget) 
 
 from PyQt5.QtGui import QColor
 from localDatabase import SaveDialog
@@ -12,7 +11,6 @@ from dobleSlider import DobleSlider
 from leaguesDialog import LeaguesDialog
 from analiticsDialog import AnaliticsDialog
 from maTable import CustomTableWidget
-import time
 from datetime import datetime, timedelta
 import webbrowser
 
@@ -22,7 +20,7 @@ class Filters(QMainWindow):
     sfecha = (datetime.today()+timedelta(days=1)).strftime('%Y%m%d')
     chargestring = """SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
                         HW, HD, HL, AW, AD, AL, GOALSGH, GOALSGA, GOALCGH, GOALCGA, REH, REA, REHH, REAA, HHW, HHD, HHL, 
-                        AAW, AAL, AAD, ID_LEAGUE FROM FIXTURES WHERE FTHG != -1 AND FTAG != -1 and DATE <"""
+                        AAW, AAL, AAD, ID_LEAGUE, ID FROM FIXTURES WHERE FTHG != -1 AND FTAG != -1 and DATE <"""
     chargestring += sfecha
 
     #como se ven las progressBar
@@ -43,15 +41,15 @@ class Filters(QMainWindow):
                            QProgressBar::chunk:horizontal{ background: rgb(240,60,40); 
                            border-radius: 9px;}"""
     #tamaño maximo de cada progressbar
-    max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 10, 10, 50, 50, 10, 10, 10, 10, 10, 10,10,10]
+    max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 10, 10, 50, 50, 10, 10, 10, 10, 10, 10, 10, 10]
 
     def __init__(self):
         super().__init__()
         #creates widgets
         globalWidgets = QWidget()
-        globalWidgets.setWindowTitle("Backtesting")
 
         #widgets layout1
+        #labels
         self.filtros = QLabel("Filtros")
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.filterProfile = QLabel("-")
@@ -70,6 +68,7 @@ class Filters(QMainWindow):
         self.odd2        = QLabel("ODD2:    0.0-10.0")
         self.odd_under25 = QLabel("UNDER25: 0.0-10.0")
         
+        #buttons
         self.aplicar = QPushButton("Aplicar")
         self.save = QPushButton("Save/Load")
         self.save.setIcon(self.style().standardIcon(getattr(QStyle, "SP_DialogSaveButton")))
@@ -78,6 +77,7 @@ class Filters(QMainWindow):
         self.reset = QPushButton("Reset")
         self.setleagues = QPushButton("Set leagues")
 
+        #ptajes
         self.ptajeBarPGHD = QSlider(Qt.Horizontal)
         self.ptajeBarPGAD = QSlider(Qt.Horizontal)
         self.ptajeBarPHD = QSlider(Qt.Horizontal)
@@ -122,7 +122,6 @@ class Filters(QMainWindow):
         #widgets layout2
         self.resultados = QLabel("Resultados")
         self.resultados.setStyleSheet("font-size: 16px; font-weight: bold;")
-        
         
         self.ptajeEmpates = QLabel("% de Empates")
         self.empates = QLabel("0 Empates")
@@ -366,7 +365,6 @@ class Filters(QMainWindow):
             self.progressBar.hide()
             self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
             self.table.clearContents()
-            self.table.setRowCount(len(self.currentDatos))
             self.table.setItems(self.currentDatos)
 
             self.getActualEmpates()
@@ -393,8 +391,7 @@ class Filters(QMainWindow):
     def endBar(self):
         self.progressBar.hide()
         self.table.clearContents()
-        
-        self.table.setRowCount(len(self.currentDatos))
+    
         self.table.setItems(self.currentDatos)
         
         self.getActualEmpates()
@@ -641,4 +638,4 @@ class Filters(QMainWindow):
 
     def openBrowser(self, item):
         if self.table.secondTable.column(item) == 0:
-            webbrowser.open("http://www.python.org", new=2, autoraise=True)
+            webbrowser.open(f"https://www.flashscore.com/match/{self.currentDatos[self.table.secondTable.row(item)][-1]}/#match-summary", new=2, autoraise=True)
