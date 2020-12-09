@@ -18,10 +18,9 @@ import webbrowser
 class Filters(QMainWindow):
     filterValues = pyqtSignal(list)
     sfecha = (datetime.today()+timedelta(days=1)).strftime('%Y%m%d')
-    chargestring = """SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
+    chargestring = f"""SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
                         HW, HD, HL, AW, AD, AL, GOALSGH, GOALSGA, GOALCGH, GOALCGA, REH, REA, REHH, REAA, HHW, HHD, HHL, 
-                        AAW, AAL, AAD, ID_LEAGUE, ID FROM FIXTURES WHERE FTHG != -1 AND FTAG != -1 and DATE <"""
-    chargestring += sfecha
+                        AAW, AAL, AAD, ID_LEAGUE, ID FROM FIXTURES WHERE FTHG != -1 AND FTAG != -1 and DATE <{sfecha} ORDER BY DATE, TIME"""
 
     #como se ven las progressBar
     style1 =  """QProgressBar {border-style: outset;
@@ -84,8 +83,8 @@ class Filters(QMainWindow):
         self.ptajeBarPGAD = QSlider(Qt.Horizontal)
         self.ptajeBarPHD = QSlider(Qt.Horizontal)
         self.ptajeBarPAD = QSlider(Qt.Horizontal)
-        self.ptajeBarPPGHome = QSlider(Qt.Horizontal)
-        self.ptajeBarPPGAway = QSlider(Qt.Horizontal)
+        self.ptajeBarPPGHome = DobleSlider(380, 20, 0, 3, 0.1, self.ppghome)
+        self.ptajeBarPPGAway =DobleSlider(380, 20, 0, 3, 0.1, self.ppgaway)
         self.ptajeBarTGPG = DobleSlider(380, 20, 0, 5, 0.2, self.tgpg)
         self.ptajeBarPJHome = QSlider(Qt.Horizontal)
         self.ptajeBarPJAway = QSlider(Qt.Horizontal)
@@ -102,8 +101,6 @@ class Filters(QMainWindow):
         self.ptajeBarPGAD.setRange(0, 100)
         self.ptajeBarPHD.setRange(0, 100)
         self.ptajeBarPAD.setRange(0, 100)
-        self.ptajeBarPPGHome.setRange(0, 10)
-        self.ptajeBarPPGAway.setRange(0, 10)
         self.ptajeBarPJAway.setRange(0, 50)
         self.ptajeBarPJHome.setRange(0, 50)
         self.ptajeBarRempate.setRange(0, 10)
@@ -143,8 +140,6 @@ class Filters(QMainWindow):
         self.ptajeBarPGAD.valueChanged.connect(self.actualizarPGAD)
         self.ptajeBarPHD.valueChanged.connect(self.actualizarPHD)
         self.ptajeBarPAD.valueChanged.connect(self.actualizarPAD)
-        self.ptajeBarPPGAway.valueChanged.connect(self.actualizarPPGAway)
-        self.ptajeBarPPGHome.valueChanged.connect(self.actualizarPPGHome)
         self.ptajeBarPJAway.valueChanged.connect(self.actualizarPJAway)
         self.ptajeBarPJHome.valueChanged.connect(self.actualizarPJHome)
         self.ptajeBarRempate.valueChanged.connect(self.actualizarRempate)
@@ -245,19 +240,6 @@ class Filters(QMainWindow):
 
     def actualizarPAD(self):
         self.pad.setText("PAD:         {}%".format(self.ptajeBarPAD.value()))
-
-    def actualizarPPGHome(self):
-        if self.ptajeBarPPGHome.value() >= 10:
-            self.ppghome.setText("PPGHome:      {}+".format(self.ptajeBarPPGHome.value()))
-        else:
-            self.ppghome.setText("PPGHome:      {}".format(self.ptajeBarPPGHome.value()))
-    
-    def actualizarPPGAway(self):
-        if self.ptajeBarPPGAway.value() >= 10:
-            self.ppgaway.setText("PPGAway:      {}+".format(self.ptajeBarPPGAway.value()))
-        else:
-            self.ppgaway.setText("PPGAway:      {}".format(self.ptajeBarPPGAway.value()))
-
         
     def actualizarPJHome(self):
         if self.ptajeBarPJHome.value() >= 50:
@@ -338,13 +320,14 @@ class Filters(QMainWindow):
                                  (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.getBigerThanHandler()
                                  and (self.ptajeBarTGPG.getLessThanHandler() >= elemento[9] or self.ptajeBarTGPG.isMaxLessHandler())))):
                     isIn = False
-
-                elif not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
+                elif not((self.ptajeBarPPGHome.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
+                                 (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarPPGHome.getBigerThanHandler()
+                                 and (self.ptajeBarPPGHome.getLessThanHandler() >= elemento[9] or self.ptajeBarPPGHome.isMaxLessHandler())))):
                     isIn = False
-
-                elif not(self.ptajeBarPPGAway.value() <= 0 or (isinstance(elemento[11], float) and elemento[11] >= self.ptajeBarPPGAway.value())):
+                elif not((self.ptajeBarPPGAway.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
+                                 (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarPPGAway.getBigerThanHandler()
+                                 and (self.ptajeBarPPGAway.getLessThanHandler() >= elemento[9] or self.ptajeBarPPGAway.isMaxLessHandler())))):
                     isIn = False
-
                 elif not(self.ptajeBarPJHome.value() <= 0 or elemento[12] >= self.ptajeBarPJHome.value()):
                     isIn = False
 
@@ -483,8 +466,8 @@ class Filters(QMainWindow):
                 self.ptajeBarPGAD.value(),
                 self.ptajeBarPHD.value(),
                 self.ptajeBarPAD.value(),
-                self.ptajeBarPPGHome.value(),
-                self.ptajeBarPPGAway.value(),
+                self.ptajeBarPPGHome.values(),
+                self.ptajeBarPPGAway.values(),
                 self.ptajeBarTGPG.values(),
                 self.ptajeBarPJHome.value(),
                 self.ptajeBarPJAway.value(),
@@ -500,8 +483,10 @@ class Filters(QMainWindow):
         self.ptajeBarPGAD.setValue(esta[1])
         self.ptajeBarPHD.setValue(esta[2])
         self.ptajeBarPAD.setValue(esta[3])
-        self.ptajeBarPPGHome.setValue(esta[4])
-        self.ptajeBarPPGAway.setValue(esta[5])
+        self.ptajeBarPPGHome.setBigerThanHandler(esta[4][0])
+        self.ptajeBarPPGHome.setLessThanHandler(esta[4][1])
+        self.ptajeBarPPGAway.setBigerThanHandler(esta[5][0])
+        self.ptajeBarPPGAway.setLessThanHandler(esta[5][1])
         self.ptajeBarTGPG.setBigerThanHandler(esta[6][0])
         self.ptajeBarTGPG.setLessThanHandler(esta[6][1])
         self.ptajeBarPJHome.setValue(esta[7])
@@ -519,8 +504,8 @@ class Filters(QMainWindow):
         self.ptajeBarPGAD.setValue(0)
         self.ptajeBarPHD.setValue(0)
         self.ptajeBarPAD.setValue(0)
-        self.ptajeBarPPGHome.setValue(0)
-        self.ptajeBarPPGAway.setValue(0)
+        self.ptajeBarPPGHome.reset()
+        self.ptajeBarPPGAway.reset()
         self.ptajeBarTGPG.reset()
         self.ptajeBarPJHome.setValue(0)
         self.ptajeBarPJAway.setValue(0)
@@ -540,10 +525,12 @@ class Filters(QMainWindow):
         QMainWindow.resizeEvent(self, event)
 
     def changeSize(self):
-        self.ptajeBarODD1.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
-        self.ptajeBarODD2.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
-        self.ptajeBarUNDER25.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
-        self.ptajeBarTGPG.resizeWidth( width = self.ptajeBarPPGAway.width(), height = self.ptajeBarPPGAway.height())
+        self.ptajeBarODD1.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
+        self.ptajeBarODD2.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
+        self.ptajeBarUNDER25.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
+        self.ptajeBarTGPG.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
+        self.ptajeBarPPGHome.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
+        self.ptajeBarPPGAway.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
 
     def toDate(self, elemento):
         return QDate(int(elemento[-4:]), int(elemento[3:5]), int( elemento[:2]))

@@ -66,8 +66,8 @@ class SaveDialog(QDialog):
         self.pgadValue = QLabel(str(self.maninWindow.ptajeBarPGAD.value()))
         self.phdValue = QLabel(str(self.maninWindow.ptajeBarPHD.value()))
         self.padValue = QLabel(str(self.maninWindow.ptajeBarPAD.value()))
-        self.ppghomeValue = QLabel(str(self.maninWindow.ptajeBarPPGHome.value()))
-        self.ppgawayValue = QLabel(str(self.maninWindow.ptajeBarPPGAway.value()))
+        self.ppghomeValue = QLabel(str(self.maninWindow.ptajeBarPPGHome.valuesToString()))
+        self.ppgawayValue = QLabel(str(self.maninWindow.ptajeBarPPGAway.valuesToString()))
         self.tgpgValue = QLabel(self.maninWindow.ptajeBarTGPG.valuesToString())
         self.pjhomeValue = QLabel(str(self.maninWindow.ptajeBarPJHome.value()))
         self.pjawayValue = QLabel(str(self.maninWindow.ptajeBarPJAway.value()))
@@ -97,8 +97,8 @@ class SaveDialog(QDialog):
         self.spgadValue = QLabel("0")
         self.sphdValue = QLabel("0")
         self.spadValue = QLabel("0")
-        self.sppghomeValue = QLabel("0")
-        self.sppgawayValue = QLabel("0")
+        self.sppghomeValue = QLabel("0-3")
+        self.sppgawayValue = QLabel("0-3")
         self.stgpgValue = QLabel("0-5")
         self.spjhomeValue = QLabel("0")
         self.spjawayValue = QLabel("0")
@@ -280,7 +280,7 @@ class SaveDialog(QDialog):
                 else:
                     try:
                         saveit = True
-                        with open("svdStngs.json") as json_file:
+                        with open('svdStngs.json', "r") as json_file:
                             data = json.load(json_file)
                             for d in data:
                                 if d == text:
@@ -295,7 +295,7 @@ class SaveDialog(QDialog):
                         if saveit:
                             with open('svdStngs.json', "w") as json_file:
                                 data[text] = {"PGHD" : 0, "PGAD" : 0, "PHD" : 0, "PAD" : 0,"TGPG" : [0, 1], 
-                                        "PPGHome" : 0, "PPGAway" : 0, "PJHome" : 0, "PJAway" : 0, "REmpate" : 0,
+                                        "PPGHome" : [0, 3], "PPGAway" : [0, 3], "PJHome" : 0, "PJAway" : 0, "REmpate" : 0,
                                         "ODDS1" : [0, 1], "ODDS2" : [0, 1], "ODDS_UNDER25" : [0, 1]}
                                 json.dump(data, json_file)
                             self.actualizarLista()
@@ -318,8 +318,10 @@ class SaveDialog(QDialog):
                 self.spadValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PAD"],2)))
                 self.stgpgValue.setText(str(round(data[self.listProfiles.currentItem().text()]["TGPG"][0],2)) + "-" + 
                                                     str(round(data[self.listProfiles.currentItem().text()]["TGPG"][1],2)))
-                self.sppghomeValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PPGHome"],2)))
-                self.sppgawayValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PPGAway"],2)))
+                self.sppghomeValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PPGHome"][0],2)) + "-" + 
+                                                    str(round(data[self.listProfiles.currentItem().text()]["PPGHome"][1],2)))
+                self.sppgawayValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PPGAway"][0],2)) + "-" + 
+                                                    str(round(data[self.listProfiles.currentItem().text()]["PPGAway"][1],2)))
                 self.spjhomeValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PJHome"],2)))
                 self.spjawayValue.setText(str(round(data[self.listProfiles.currentItem().text()]["PJAway"],2)))
                 self.srempateValue.setText(str(round(data[self.listProfiles.currentItem().text()]["REmpate"])))
@@ -366,9 +368,9 @@ class SaveDialog(QDialog):
             if self.tgpgCheck.isChecked():
                 dic["TGPG"] = self.maninWindow.ptajeBarTGPG.values()
             if self.ppghomeCheck.isChecked():
-                dic["PPGHome"] = self.maninWindow.ptajeBarPPGHome.value()
+                dic["PPGHome"] = self.maninWindow.ptajeBarPPGHome.values()
             if self.ppgawayCheck.isChecked():
-                dic["PPGAway"] = self.maninWindow.ptajeBarPPGAway.value()                
+                dic["PPGAway"] = self.maninWindow.ptajeBarPPGAway.values()                
             if self.pjhomeCheck.isChecked():
                 dic["PJHome"] = self.maninWindow.ptajeBarPJHome.value()
             if self.pjawayCheck.isChecked():
@@ -402,10 +404,6 @@ class SaveDialog(QDialog):
                     self.maninWindow.ptajeBarPHD.setValue(data[self.listProfiles.selectedItems()[0].text()]["PHD"])
                 if self.padCheck.isChecked():
                     self.maninWindow.ptajeBarPAD.setValue(data[self.listProfiles.selectedItems()[0].text()]["PAD"])
-                if self.ppghomeCheck.isChecked():
-                    self.maninWindow.ptajeBarPPGHome.setValue(data[self.listProfiles.selectedItems()[0].text()]["PPGHome"])
-                if self.ppgawayCheck.isChecked():
-                    self.maninWindow.ptajeBarPPGAway.setValue(data[self.listProfiles.selectedItems()[0].text()]["PPGAway"])
                 if self.pjhomeCheck.isChecked():
                     self.maninWindow.ptajeBarPJHome.setValue(data[self.listProfiles.selectedItems()[0].text()]["PJHome"])
                 if self.pjawayCheck.isChecked():
@@ -426,6 +424,13 @@ class SaveDialog(QDialog):
                 if self.odd_under25Check.isChecked():
                     self.maninWindow.ptajeBarUNDER25.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["ODDS_UNDER25"][0])
                     self.maninWindow.ptajeBarUNDER25.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["ODDS_UNDER25"][1])
+                if self.ppghomeCheck.isChecked():
+                    self.maninWindow.ptajeBarPPGHome.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["PPGHome"][0])
+                    self.maninWindow.ptajeBarPPGHome.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["PPGHome"][1])
+                if self.ppgawayCheck.isChecked():
+                    self.maninWindow.ptajeBarPPGHome.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["PPGAway"][0])
+                    self.maninWindow.ptajeBarPPGHome.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["PPGAway"][1])
+
                 
             self.maninWindow.filterProfile.setText(self.listProfiles.selectedItems()[0].text() + " -profile")
             self.maninWindow.aplicarResultado()
