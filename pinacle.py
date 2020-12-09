@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QThreadPool
+from PyQt5.QtCore import QThreadPool
 
 from PyQt5.QtWidgets import (QLabel, QPushButton, QTableWidgetItem, QMessageBox,
                              QMainWindow, QWidget, QTableWidget, QVBoxLayout,
@@ -24,6 +24,9 @@ class Analisis(QMainWindow):
     'Cookie': '__cfduid=dd2dc08704f713cbbfeae0b535e0db2181607335654'
     }
 
+    data = {}
+    #para iniciar y reiniciar
+    restart_values = [[2, 3.5], [2, 3.5], [0, 2],[-5,5]]
 
     def __init__(self):
         super().__init__()
@@ -46,10 +49,18 @@ class Analisis(QMainWindow):
         self.ptajeBarUNDER25 = DobleSlider(700, 20, 0, 5, 0.2, self.odd_under25)
         self.ptajeDifOds = DobleSlider(700, 20, -5, 5, 0.2, self.difOdds)
 
+        self.autoValue()
+
+        #checkbox
         self.onlyToday = QCheckBox("Only Today")
+
         #boton
         self.cargar = QPushButton("Load/Refresh")
         self.cargar.clicked.connect(self.cargarMatches)
+        self.reset = QPushButton("Reset")
+        self.reset.clicked.connect(self.resetValues)
+        self.default = QPushButton("Default")
+        self.default.clicked.connect(self.defaultValues)
 
         #progres bar
         self.progressBar = QProgressBar()
@@ -78,6 +89,7 @@ class Analisis(QMainWindow):
         mainLayout = QVBoxLayout()
         machesLayou = QHBoxLayout()
         oddlayout = QHBoxLayout()
+        buttsLayout = QHBoxLayout()
 
         machesLayou.addWidget(self.matches)
         machesLayou.addWidget(self.partidos)
@@ -88,6 +100,12 @@ class Analisis(QMainWindow):
         oddlayout.addStretch()
         oddlayout.addWidget(self.lastDate)
 
+        
+        buttsLayout.addWidget(self.onlyToday)
+        buttsLayout.addStretch()
+        buttsLayout.addWidget(self.reset)
+        buttsLayout.addWidget(self.default)
+
         mainLayout.addLayout(oddlayout)
         mainLayout.addWidget(self.odd1)
         mainLayout.addWidget(self.ptajeBarODD1)
@@ -97,7 +115,7 @@ class Analisis(QMainWindow):
         mainLayout.addWidget(self.ptajeBarUNDER25)
         mainLayout.addWidget(self.difOdds)
         mainLayout.addWidget(self.ptajeDifOds)
-        mainLayout.addWidget(self.onlyToday)
+        mainLayout.addLayout(buttsLayout)
         mainLayout.addWidget(self.cargar)
         mainLayout.addLayout(machesLayou)
         mainLayout.addWidget(self.table)
@@ -113,8 +131,9 @@ class Analisis(QMainWindow):
         self.progressBar.show()
 
         #bajamos los datos
-        response = requests.request("GET", self.url, headers=self.headers, data=self.payload)
-        data = ast.literal_eval(response.text)
+        if len(self.data) <= 0:
+            response = requests.request("GET", self.url, headers=self.headers, data=self.payload)
+            self.data = ast.literal_eval(response.text)
 
         #filtramos
         self.datos = []
@@ -124,7 +143,7 @@ class Analisis(QMainWindow):
 
         self.partidosContador = 0
         contador = 0
-        for dato in data["data"]:
+        for dato in self.data["data"]:
             isIn = True
             if not((self.ptajeBarODD1.getLessThanHandler() >= dato["odd1"] or self.ptajeBarODD1.isMaxLessHandler()) and 
                (self.ptajeBarODD1.getBigerThanHandler() <= dato["odd1"] or self.ptajeBarODD1.isLowest())):
@@ -156,7 +175,7 @@ class Analisis(QMainWindow):
                 self.datos.append(lista)
                 self.partidosContador += 1
 
-            self.progressBar.setValue(contador/len(data["data"]))
+            self.progressBar.setValue(contador/len(self.data["data"]))
             contador +=1
 
         self.partidos.setText("Partidos: " + str(self.partidosContador))
@@ -168,7 +187,7 @@ class Analisis(QMainWindow):
         self.progressBar.hide()
         self.cargar.setText("Load/Refresh")
         auxFecha = datetime.now()
-        self.lastDate.setText(auxFecha.strftime("%H:%M:%S %d/%m/%y"))
+        self.lastDate.setText("Last refresh: " + auxFecha.strftime("%H:%M:%S %d/%m/%y"))
 
     
     def changeSize(self):
@@ -226,3 +245,31 @@ class Analisis(QMainWindow):
             
     def getDate(self, fecha):
         return fecha[8:] + "/" + fecha[5:7] + "/" + fecha[:4]
+
+    def autoValue(self):
+        self.ptajeBarODD1.setBigerThanHandler(self.restart_values[0][0])
+        self.ptajeBarODD1.setLessThanHandler(self.restart_values[0][1])
+        self.ptajeBarODD2.setBigerThanHandler(self.restart_values[1][0])
+        self.ptajeBarODD2.setLessThanHandler(self.restart_values[1][1])
+        self.ptajeBarUNDER25.setBigerThanHandler(self.restart_values[2][0])
+        self.ptajeBarUNDER25.setLessThanHandler(self.restart_values[2][1])
+        self.ptajeDifOds.setBigerThanHandler(self.restart_values[3][0])
+        self.ptajeDifOds.setLessThanHandler(self.restart_values[3][1])
+
+    def defaultValues(self):
+        self.autoValue()
+        self.onlyToday.setChecked(False)
+        self.cargarMatches()
+
+    def resetValues(self):
+        self.ptajeBarODD1.setBigerThanHandler(0)
+        self.ptajeBarODD1.setLessThanHandler(5)
+        self.ptajeBarODD2.setBigerThanHandler(0)
+        self.ptajeBarODD2.setLessThanHandler(5)
+        self.ptajeBarUNDER25.setBigerThanHandler(0)
+        self.ptajeBarUNDER25.setLessThanHandler(5)
+        self.ptajeDifOds.setBigerThanHandler(-5)
+        self.ptajeDifOds.setLessThanHandler(5)
+        self.onlyToday.setChecked(False)
+        self.cargarMatches()
+        

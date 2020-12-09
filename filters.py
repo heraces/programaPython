@@ -362,13 +362,13 @@ class Filters(QMainWindow):
                 if(contador%3000 == 0):
                     self.progressBar.setValue(contador/len(self.datos))
                 
-            self.progressBar.hide()
             self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
             self.table.clearContents()
             self.table.setItems(self.currentDatos)
 
             self.getActualEmpates()
             self.printTheProgressBars()
+            self.progressBar.hide()
         else:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Warning)

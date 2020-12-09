@@ -39,6 +39,10 @@ class CustomTableWidget(QTableWidget):
         self.secondTable.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
         self.viewport().stackUnder(self.secondTable) 
 
+        #si seleccionamos una tabla no seleccionamos la otra, no se puede tener todo
+        self.itemSelectionChanged.connect(self.secondTable.clearSelection)
+        self.secondTable.itemSelectionChanged.connect(self.clearSelection)
+
         self.updateFrozenTableGeometry()
 
         self.secondTable.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)

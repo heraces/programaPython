@@ -475,7 +475,6 @@ class Predictions(QMainWindow):
                 if(contador%3000 == 0):
                     self.progressBar.setValue(contador/len(self.datos))
                 
-            self.progressBar.hide()
             self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
             self.table.clearContents()
             
@@ -483,6 +482,7 @@ class Predictions(QMainWindow):
                 
             self.getActualEmpates()
             self.printTheProgressBars()
+            self.progressBar.hide()
         else:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Warning)

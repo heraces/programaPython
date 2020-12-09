@@ -120,14 +120,16 @@ class DobleSlider(QWidget):
 
 
     def setBigerThanHandler(self, aux):
-        self.leftPos = int((aux-self.start)/ self.interval)
-        self.leftLeft = self.leftPos * self.visualInterval
-        self.editText()
+        if aux-self.start <= self.range:
+            self.leftPos = int((aux-self.start)/ self.interval)
+            self.leftLeft = self.leftPos * self.visualInterval
+            self.editText()
 
     def setLessThanHandler(self, aux):
-        self.rightPos = int((aux-self.start) / self.interval)
-        self.rigthLeft = self.rightPos * self.visualInterval
-        self.editText()
+        if aux-self.start <= self.range:
+            self.rightPos = int((aux-self.start) / self.interval)
+            self.rigthLeft = self.rightPos * self.visualInterval
+            self.editText()
     
     def values(self):
         return [self.start + self.leftPos * self.interval, self.start + self.rightPos * self.interval]
