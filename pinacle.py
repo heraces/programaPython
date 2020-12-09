@@ -1,12 +1,13 @@
-from PyQt5.QtCore import QSize, Qt, QThreadPool, pyqtSignal, QDate
+from PyQt5.QtCore import Qt, QThreadPool
 
-from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QMessageBox, QTableWidgetItem,
-                             QMainWindow, QSlider, QWidget, QTableWidget, QVBoxLayout,
+from PyQt5.QtWidgets import (QLabel, QPushButton, QTableWidgetItem, QMessageBox,
+                             QMainWindow, QWidget, QTableWidget, QVBoxLayout,
                              QProgressBar, QHBoxLayout, QCheckBox, QHeaderView) 
 
 from dobleSlider import DobleSlider
 from datetime import datetime, timedelta
-import http.client
+from threaded import Orderer
+import requests
 import ast
 
 
@@ -15,12 +16,14 @@ class Analisis(QMainWindow):
     sfecha = (datetime.today()+timedelta(days=1)).strftime('%Y%m%d')
 
     #conexion
-    conn = http.client.HTTPSConnection("api.ps3838.com")
-    payload = ''
+    url = "http://soccerdatastats.com/empates/odds.php"
+
+    payload={}
     headers = {
-        'Authorization': 'Basic QUM4ODBCUzU4MTpBc1NhQTg5NjU=',
-        'Cookie': '__cfduid=dd2dc08704f713cbbfeae0b535e0db2181607335654'
+    'Authorization': 'Basic QUM4ODBCUzU4MTpBc1NhQTg5NjU=',
+    'Cookie': '__cfduid=dd2dc08704f713cbbfeae0b535e0db2181607335654'
     }
+
 
     def __init__(self):
         super().__init__()
@@ -36,12 +39,12 @@ class Analisis(QMainWindow):
         self.odd1        = QLabel("Odds1(home):     0.0-5.0")
         self.odd2        = QLabel("Odds2(away):     0.0-5.0")
         self.odd_under25 = QLabel("Odds_under 25:   0.0-5.0")
-        self.difOdds     = QLabel("Diff_odds:      0.0-10.0")
+        self.difOdds     = QLabel("Diff_odds:      -5.0-5.0")
 
-        self.ptajeBarODD1 = DobleSlider(700, 20, 5, 0.2, self.odd1)
-        self.ptajeBarODD2 = DobleSlider(700, 20, 5, 0.2, self.odd2)
-        self.ptajeBarUNDER25 = DobleSlider(700, 20, 5, 0.2, self.odd_under25)
-        self.ptajeDifOds = DobleSlider(700, 20, 10, 0.2, self.difOdds)
+        self.ptajeBarODD1 = DobleSlider(700, 20, 0, 5, 0.2, self.odd1)
+        self.ptajeBarODD2 = DobleSlider(700, 20, 0, 5, 0.2, self.odd2)
+        self.ptajeBarUNDER25 = DobleSlider(700, 20, 0, 5, 0.2, self.odd_under25)
+        self.ptajeDifOds = DobleSlider(700, 20, -5, 5, 0.2, self.difOdds)
 
         self.onlyToday = QCheckBox("Only Today")
         #boton
@@ -55,10 +58,19 @@ class Analisis(QMainWindow):
         #tabla        
         self.matches = QLabel("Matches")
         self.matches.setStyleSheet("font-size: 18px; font-weight: bold;")
+        self.partidos = QLabel("Partidos")
+        self.partidosContador = 0
+        self.datos = []
+        
         self.table = QTableWidget()
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["starts", "home", "away", "rotNum", "liveStatus", "status", "parlayRestriction"])
+        self.table.setColumnCount(9)
+        self.table.setHorizontalHeaderLabels(["Fecha", "Hora", "Home", "Away", "Odds1", "OddsX", "Odds2", "OddsU25", "Diff Odds"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionsClickable(True)
+        self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
+
+        #para ordenar
+        self.threadpool = QThreadPool()
 
         #layout
         self.widget = QWidget()
@@ -68,6 +80,8 @@ class Analisis(QMainWindow):
         oddlayout = QHBoxLayout()
 
         machesLayou.addWidget(self.matches)
+        machesLayou.addWidget(self.partidos)
+        machesLayou.addStretch()
         machesLayou.addWidget(self.progressBar)
 
         oddlayout.addWidget(self.odds)
@@ -98,27 +112,64 @@ class Analisis(QMainWindow):
         self.progressBar.setValue(0)
         self.progressBar.show()
 
-        self.conn.request("GET", "/v1/fixtures?sportId=29", self.payload, self.headers)
-        res = self.conn.getresponse()
-        data = res.read()
+        #bajamos los datos
+        response = requests.request("GET", self.url, headers=self.headers, data=self.payload)
+        data = ast.literal_eval(response.text)
 
-        datos = ast.literal_eval(data.decode("utf-8"))
-        self.table.setRowCount(len(datos["league"]))
-        fila = 0
-        for dato in datos["league"]:
-            for array in dato["events"]:
-                    self.table.setItem(fila, 0, QTableWidgetItem(array["starts"]))
-                    self.table.setItem(fila, 1, QTableWidgetItem(array["home"]))
-                    self.table.setItem(fila, 2, QTableWidgetItem(array["away"]))
-                    self.table.setItem(fila, 3, QTableWidgetItem(array["rotNum"]))
-                    self.table.setItem(fila, 4, QTableWidgetItem(array["liveStatus"]))
-                    self.table.setItem(fila, 5, QTableWidgetItem(array["status"]))
-                    self.table.setItem(fila, 6, QTableWidgetItem(array["parlayRestriction"]))
-                    fila += 1
+        #filtramos
+        self.datos = []
+        fecha = ""
+        if self.onlyToday.isChecked():
+            fecha = self.sfecha[:4] + "-" + self.sfecha[4:6] + "-" + self.sfecha[6:]
+
+        self.partidosContador = 0
+        contador = 0
+        for dato in data["data"]:
+            isIn = True
+            if not((self.ptajeBarODD1.getLessThanHandler() >= dato["odd1"] or self.ptajeBarODD1.isMaxLessHandler()) and 
+               (self.ptajeBarODD1.getBigerThanHandler() <= dato["odd1"] or self.ptajeBarODD1.isLowest())):
+                    isIn = False
+            elif not((self.ptajeBarODD2.getLessThanHandler() >= dato["odd2"] or self.ptajeBarODD2.isMaxLessHandler()) and 
+               (self.ptajeBarODD2.getBigerThanHandler() <= dato["odd2"] or self.ptajeBarODD2.isLowest())):
+                    isIn = False
+            elif not((self.ptajeBarUNDER25.getLessThanHandler() >= dato["oddU25"] or self.ptajeBarUNDER25.isMaxLessHandler()) and 
+               (self.ptajeBarUNDER25.getBigerThanHandler() <= dato["oddU25"] or self.ptajeBarUNDER25.isLowest())):
+                    isIn = False
+            elif not((self.ptajeDifOds.getLessThanHandler() >= dato["difOdds"] or self.ptajeDifOds.isMaxLessHandler()) and 
+               (self.ptajeDifOds.getBigerThanHandler() <= dato["difOdds"] or self.ptajeDifOds.isLowest())):
+                    isIn = False
+
+            if self.onlyToday.isChecked() and fecha != dato["fecha"]:
+                isIn =False
+
+            if isIn:
+                lista = []
+                lista.append(self.getDate(dato["fecha"]))
+                lista.append(dato["hora"])
+                lista.append(dato["home"])
+                lista.append(dato["away"])
+                lista.append(dato["odd1"])
+                lista.append(dato["oddX"])
+                lista.append(dato["odd2"])
+                lista.append(dato["oddU25"])
+                lista.append(dato["difOdds"])
+                self.datos.append(lista)
+                self.partidosContador += 1
+
+            self.progressBar.setValue(contador/len(data["data"]))
+            contador +=1
+
+        self.partidos.setText("Partidos: " + str(self.partidosContador))
+
+        #añadimos a la tabla
+        self.popularLaTabla()
 
         self.cargar.setEnabled(True)
         self.progressBar.hide()
         self.cargar.setText("Load/Refresh")
+        auxFecha = datetime.now()
+        self.lastDate.setText(auxFecha.strftime("%H:%M:%S %d/%m/%y"))
+
     
     def changeSize(self):
         self.ptajeBarODD1.resizeWidth( width = self.widget.width()/10*9, height = self.ptajeBarODD1.height)
@@ -129,3 +180,49 @@ class Analisis(QMainWindow):
     def resizeEvent(self, event):#sobreescribimos el metodo
         self.changeSize()
         QMainWindow.resizeEvent(self, event)
+
+    def sortTable(self, sortingColumn):
+        if len(self.datos) > 0:
+            self.progressBar.setValue(0)
+            self.progressBar.show()
+            worker = Orderer(self.datos, sortingColumn)
+            worker.signals.progress.connect(self.update_progress)
+            worker.signals.finished.connect(self.endBar)
+            self.threadpool.start(worker)
+        
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("There´s nothing to arrange")
+            msg.setWindowTitle("Database empty")
+            msg.exec_()
+
+
+    def update_progress(self, progress):
+        self.progressBar.setValue(progress)
+
+    def endBar(self):
+        self.progressBar.hide()
+        self.table.clearContents()
+    
+        self.popularLaTabla()
+
+    def popularLaTabla(self):
+        self.table.setRowCount(len(self.datos))
+        self.progressBar.setValue(0)
+        fila = 0
+        for dato in self.datos:
+            self.table.setItem(fila, 0, QTableWidgetItem(dato[0]))
+            self.table.setItem(fila, 1, QTableWidgetItem(dato[1]))
+            self.table.setItem(fila, 2, QTableWidgetItem(dato[2]))
+            self.table.setItem(fila, 3, QTableWidgetItem(dato[3]))
+            self.table.setItem(fila, 4, QTableWidgetItem(str(round(dato[4], 3))))
+            self.table.setItem(fila, 5, QTableWidgetItem(str(round(dato[5], 3))))
+            self.table.setItem(fila, 6, QTableWidgetItem(str(round(dato[6], 3))))
+            self.table.setItem(fila, 7, QTableWidgetItem(str(round(dato[7], 3))))
+            self.table.setItem(fila, 8, QTableWidgetItem(str(round(dato[8], 3))))
+            fila += 1
+            self.progressBar.setValue(fila/len(self.datos))
+            
+    def getDate(self, fecha):
+        return fecha[8:] + "/" + fecha[5:7] + "/" + fecha[:4]

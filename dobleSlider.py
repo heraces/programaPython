@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt
  
  
 class DobleSlider(QWidget):
-    def __init__(self, width, height, rango, interval, Label):
+    def __init__(self, width, height, start, end, interval, Label):
         super().__init__()
 
         #tamaño del canvas
@@ -15,7 +15,8 @@ class DobleSlider(QWidget):
         #medidas del handle, rango y tal
         self.handleWidth = self.width/50
         self.handleHeight = self.height
-        self.range = rango
+        self.start = start
+        self.range = end - start 
         self.interval = interval
         self.visualInterval = (self.width-self.handleWidth)/(self.range/self.interval)
         self.threshold = 0.2
@@ -112,30 +113,33 @@ class DobleSlider(QWidget):
 
 
     def getBigerThanHandler(self):
-        return round((self.leftPos * self.interval),3)
+        return round(self.start + (self.leftPos * self.interval),3)
 
     def getLessThanHandler(self):
-        return round((self.rightPos * self.interval),3)
+        return round(self.start + (self.rightPos * self.interval),3)
 
 
     def setBigerThanHandler(self, aux):
-        self.leftPos = int(aux/ self.interval)
+        self.leftPos = int((aux-self.start)/ self.interval)
         self.leftLeft = self.leftPos * self.visualInterval
         self.editText()
 
     def setLessThanHandler(self, aux):
-        self.rightPos = int(aux / self.interval)
+        self.rightPos = int((aux-self.start) / self.interval)
         self.rigthLeft = self.rightPos * self.visualInterval
         self.editText()
     
     def values(self):
-        return [self.leftPos * self.interval, self.rightPos * self.interval]
+        return [self.start + self.leftPos * self.interval, self.start + self.rightPos * self.interval]
 
     def valuesToString(self):
-        return str(round((self.leftPos * self.interval),2)) + "-" + str(round((self.rightPos * self.interval),2))
+        return str(round(self.start + (self.leftPos * self.interval),2)) + "-" + str(round(self.start + (self.rightPos * self.interval),2))
 
     def isMaxLessHandler(self):
         return self.range/self.interval <= self.rightPos
+
+    def isLowest(self):
+        return self.leftPos <= 0
 
     def reset(self):
         self.leftPos = 0

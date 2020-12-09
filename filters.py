@@ -1,8 +1,8 @@
 
-from PyQt5.QtCore import Qt, QThreadPool, pyqtSignal, QDate
+from PyQt5.QtCore import Qt, QThreadPool, pyqtSignal, QDate, QSize
 
 from PyQt5.QtWidgets import (QLabel, QPushButton, QStyle, QMessageBox, QMainWindow, QSlider, QWidget, 
-                            QVBoxLayout, QProgressBar, QGridLayout, QDateEdit, QListWidget) 
+                            QVBoxLayout, QProgressBar, QGridLayout, QDateEdit, QListWidget, QHBoxLayout) 
 
 from PyQt5.QtGui import QColor
 from localDatabase import SaveDialog
@@ -29,7 +29,8 @@ class Filters(QMainWindow):
                            border-color: #74c8ff;
                            border-radius: 9px;
                            border-width: 2px;
-                           font-weight: bold;} 
+                           font-weight: bold;
+                           color: black;}
                            QProgressBar::chunk:horizontal{ background: rgb(20,230,40);
                            border-radius: 9px;}"""
     style2 = """QProgressBar {border-style: outset;
@@ -37,7 +38,8 @@ class Filters(QMainWindow):
                            border-color: #74c8ff;
                            border-radius: 9px;
                            border-width: 2px;
-                           font-weight: bold;}
+                           font-weight: bold;
+                           color: black;}
                            QProgressBar::chunk:horizontal{ background: rgb(240,60,40); 
                            border-radius: 9px;}"""
     #tamaño maximo de cada progressbar
@@ -75,7 +77,7 @@ class Filters(QMainWindow):
         self.binding = QPushButton("Copy to predictions")
         self.binding.setIcon(self.style().standardIcon(getattr(QStyle, "SP_CommandLink")))
         self.reset = QPushButton("Reset")
-        self.setleagues = QPushButton("Set leagues")
+        self.setleagues = QPushButton("Arrange leagues")
 
         #ptajes
         self.ptajeBarPGHD = QSlider(Qt.Horizontal)
@@ -84,13 +86,13 @@ class Filters(QMainWindow):
         self.ptajeBarPAD = QSlider(Qt.Horizontal)
         self.ptajeBarPPGHome = QSlider(Qt.Horizontal)
         self.ptajeBarPPGAway = QSlider(Qt.Horizontal)
-        self.ptajeBarTGPG = DobleSlider(380, 20, 5, 0.2, self.tgpg)
+        self.ptajeBarTGPG = DobleSlider(380, 20, 0, 5, 0.2, self.tgpg)
         self.ptajeBarPJHome = QSlider(Qt.Horizontal)
         self.ptajeBarPJAway = QSlider(Qt.Horizontal)
         self.ptajeBarRempate = QSlider(Qt.Horizontal)
-        self.ptajeBarODD1 = DobleSlider(380, 20, 10, 0.2, self.odd1)
-        self.ptajeBarODD2 = DobleSlider(380, 20, 10, 0.2, self.odd2)
-        self.ptajeBarUNDER25 = DobleSlider(380, 20, 10, 0.2, self.odd_under25)
+        self.ptajeBarODD1 = DobleSlider(380, 20, 0, 10, 0.2, self.odd1)
+        self.ptajeBarODD2 = DobleSlider(380, 20, 0, 10, 0.2, self.odd2)
+        self.ptajeBarUNDER25 = DobleSlider(380, 20, 0, 10, 0.2, self.odd_under25)
 
         self.progressBar = QProgressBar()
         self.progressBar.hide()
@@ -128,6 +130,10 @@ class Filters(QMainWindow):
         self.partidos = QLabel("0 Partidos")
         self.empatesNum = 0
 
+        self.usedLeagues = QListWidget()
+        self.usedLeagues.setMaximumSize(QSize(400,50))
+        self.usedLeagues.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
         #Tabla
         self.loadData = QPushButton("Load data")
         self.table = CustomTableWidget()
@@ -162,6 +168,7 @@ class Filters(QMainWindow):
         self.currentDatos = self.datos
         self.listadeEmpates = [] 
         self.leagues = []
+        self.activeLeagues = []
 
         #threads
         self.threadpool = QThreadPool()
@@ -170,6 +177,7 @@ class Filters(QMainWindow):
         layout = QVBoxLayout()
         topLayout = QGridLayout()
         midLayout = QGridLayout()
+        midLayout2 = QHBoxLayout()
         
         topLayout.addWidget(self.filtros, 0, 0, 1, 1)
         topLayout.addWidget(self.filterProfile, 0, 1, 1, 1)
@@ -215,8 +223,11 @@ class Filters(QMainWindow):
         midLayout.addWidget(self.empates, 1, 1, 1, 1)
         midLayout.addWidget(self.partidos, 2, 1, 1, 1)
 
+        midLayout2.addLayout(midLayout)
+        midLayout2.addWidget(self.usedLeagues)
+
         layout.addLayout(topLayout)
-        layout.addLayout(midLayout)
+        layout.addLayout(midLayout2)
         layout.addWidget(self.loadData)
         layout.addWidget(self.table)
         globalWidgets.setLayout(layout)
@@ -307,7 +318,9 @@ class Filters(QMainWindow):
             for elemento in self.datos:
                 contador+= 100
                 isIn = True
-                if not(self.startDate.date() <= self.toDate(elemento[0]) and self.endDate.date() >= self.toDate(elemento[0])):
+                if not(len(self.activeLeagues) <= 0 or elemento[21] in self.activeLeagues):
+                    isIn = False
+                elif not(self.startDate.date() <= self.toDate(elemento[0]) and self.endDate.date() >= self.toDate(elemento[0])):
                     isIn = False
                 elif not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGHD.value())):
                     isIn = False
@@ -515,6 +528,8 @@ class Filters(QMainWindow):
         self.ptajeBarODD1.reset()
         self.ptajeBarODD2.reset()
         self.ptajeBarUNDER25.reset()
+        self.activeLeagues = []
+        self.usedLeagues.clear()
 
         self.startDate.setDate(self.startDate.minimumDate())
         self.endDate.setDate(self.startDate.maximumDate())
@@ -551,85 +566,10 @@ class Filters(QMainWindow):
             msg.exec_()
 
     def printe(self, dats):
-        self.currentDatos = []
-        isIn = True
-        self.progressBar.setValue(0)
-        self.progressBar.show()
-        contador = 0
-        for elemento in self.datos:
-            contador+= 100
-            isIn = True
-            if not(self.startDate.date() <= self.toDate(elemento[0]) and self.endDate.date() >= self.toDate(elemento[0])):
-                isIn = False
-            elif not(self.ptajeBarPGHD.value() <= 0 or (isinstance(elemento[5], float) and elemento[5] >= self.ptajeBarPGHD.value())):
-                isIn = False
-
-            elif not(self.ptajeBarPGAD.value() <= 0 or (isinstance(elemento[6], float) and elemento[6] >= self.ptajeBarPGAD.value())):
-                isIn = False
-
-            elif not(self.ptajeBarPHD.value() <= 0 or (isinstance(elemento[7], float) and elemento[7] >= self.ptajeBarPHD.value())):
-                isIn = False
-
-            elif not(self.ptajeBarPAD.value() <= 0 or (isinstance(elemento[8], float) and elemento[8] >= self.ptajeBarPAD.value())):
-                isIn = False
-
-            elif not((self.ptajeBarTGPG.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
-                                (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.getBigerThanHandler()
-                                and (self.ptajeBarTGPG.getLessThanHandler() >= elemento[9] or self.ptajeBarTGPG.isMaxLessHandler())))):
-                isIn = False
-
-            elif not(self.ptajeBarPPGHome.value() <= 0 or (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.value())):
-                isIn = False
-
-            elif not(self.ptajeBarPPGAway.value() <= 0 or (isinstance(elemento[11], float) and elemento[11] >= self.ptajeBarPPGAway.value())):
-                isIn = False
-
-            elif not(self.ptajeBarPJHome.value() <= 0 or elemento[12] >= self.ptajeBarPJHome.value()):
-                isIn = False
-
-            elif isIn and not(self.ptajeBarPJAway.value() <= 0 or elemento[13] >= self.ptajeBarPJAway.value()):
-                isIn = False  
-            
-            elif not(self.ptajeBarRempate.value() <= 0 or elemento[14]+elemento[15]+elemento[16]+elemento[17] >= self.ptajeBarRempate.value()):
-                isIn = False
-
-            elif not((self.ptajeBarODD1.getBigerThanHandler() <= 0 and (isinstance(elemento[18], str))) or (
-                                (isinstance(elemento[18], float) and elemento[18] >= self.ptajeBarODD1.getBigerThanHandler()
-                                and (self.ptajeBarODD1.getLessThanHandler() >= elemento[18] or self.ptajeBarODD1.isMaxLessHandler())))):
-                isIn = False
-
-            elif not((self.ptajeBarODD2.getBigerThanHandler() <= 0 and (isinstance(elemento[19], str))) or (
-                                (isinstance(elemento[19], float) and elemento[19] >= self.ptajeBarODD2.getBigerThanHandler()
-                                and (self.ptajeBarODD2.getLessThanHandler() >= elemento[19] or self.ptajeBarODD2.isMaxLessHandler())))):
-                isIn = False  
-            
-            elif not((self.ptajeBarUNDER25.getBigerThanHandler() <= 0 and (isinstance(elemento[20], str))) or (
-                                (isinstance(elemento[20], float) and elemento[20] >= self.ptajeBarUNDER25.getBigerThanHandler()
-                                and (self.ptajeBarUNDER25.getLessThanHandler() >= elemento[20] or self.ptajeBarUNDER25.isMaxLessHandler())))):
-                isIn = False
-            
-            if  isIn:
-                self.currentDatos.append(elemento)
-            
-            if(contador%3000 == 0):
-                self.progressBar.setValue(contador/len(self.datos))
-            
-        self.progressBar.hide()
-        aux = []
-
-        for item in self.currentDatos:
-            if item[-1] in dats:
-                aux.append(item)
-            contador += 1
-            self.progressBar.setValue(contador/len(self.currentDatos) * 100)
-        
-        self.currentDatos = aux
-        self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
-        self.table.clearContents()
-        self.table.setItems(self.currentDatos)
-                
-        self.getActualEmpates()
-        self.printTheProgressBars()
+        self.activeLeagues = dats
+        self.usedLeagues.clear()
+        self.usedLeagues.addItems(self.activeLeagues)
+        self.aplicarResultado()
 
     def gimmeDaAnalisis(self):
         dlg = AnaliticsDialog(self.currentDatos[self.table.currentRow()])
@@ -638,4 +578,6 @@ class Filters(QMainWindow):
 
     def openBrowser(self, item):
         if self.table.secondTable.column(item) == 0:
-            webbrowser.open(f"https://www.flashscore.com/match/{self.currentDatos[self.table.secondTable.row(item)][-1]}/#match-summary", new=2, autoraise=True)
+            webbrowser.open(
+                f"https://www.flashscore.com/match/{self.currentDatos[self.table.secondTable.row(item)][-1]}/#match-summary",
+                 new=2, autoraise=True)

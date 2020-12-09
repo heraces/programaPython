@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QCheckBox, QDialog, QGridLayout, QScrollArea, QWidget
+from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QCheckBox, QDialog, QGridLayout, QScrollArea, QWidget, QHBoxLayout
 from PyQt5.QtCore import Qt, pyqtSignal
+from saveLeaguesDialog import SaveLeaguesDialog
 
 class LeaguesDialog(QDialog):
     data = pyqtSignal(list)
@@ -14,6 +15,8 @@ class LeaguesDialog(QDialog):
         #widgets
         self.go = QPushButton("Filter")
         self.allCheck = QCheckBox("All Leagues")
+        self.save = QPushButton("Save/load")
+        self.save.clicked.connect(self.guardar)
 
         scrollarea = QScrollArea()
         scrollarea.setVerticalScrollBarPolicy( Qt.ScrollBarAlwaysOn )
@@ -40,7 +43,12 @@ class LeaguesDialog(QDialog):
 
         
         layout = QVBoxLayout()
-        layout.addWidget(self.allCheck)
+        layout2 = QHBoxLayout()
+
+        layout2.addWidget(self.allCheck)
+        layout2.addStretch()
+        layout2.addWidget(self.save)
+        layout.addLayout(layout2)
         layout.addWidget(scrollarea)
         layout.addWidget(self.go)
         self.setLayout(layout) 
@@ -71,3 +79,18 @@ class LeaguesDialog(QDialog):
                 datos.append(league.text())
         self.close()
         self.data.emit(datos)
+
+    def guardar(self):
+        datos = []
+        for league in self.maLeages:
+            if league.isChecked():
+                datos.append(league.text())
+
+        dlg = SaveLeaguesDialog(datos)
+        dlg.setWindowTitle("Save/Load profile")
+        dlg.data.connect(self.actualizarDats)
+        dlg.exec_()
+
+    def actualizarDats(self, lista):
+        self.data.emit(lista)
+        self.close()

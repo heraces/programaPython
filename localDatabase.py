@@ -290,6 +290,7 @@ class SaveDialog(QDialog):
                                     msg.setWindowTitle("Name already taken")
                                     msg.exec_()
                                     saveit = False 
+                                    break
                             
                         if saveit:
                             with open('svdStngs.json', "w") as json_file:
