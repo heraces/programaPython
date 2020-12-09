@@ -17,6 +17,7 @@ import webbrowser
 
 class Filters(QMainWindow):
     filterValues = pyqtSignal(list)
+
     sfecha = (datetime.today()+timedelta(days=1)).strftime('%Y%m%d')
     chargestring = f"""SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
                         HW, HD, HL, AW, AD, AL, GOALSGH, GOALSGA, GOALCGH, GOALCGA, REH, REA, REHH, REAA, HHW, HHD, HHL, 
@@ -41,8 +42,9 @@ class Filters(QMainWindow):
                            color: black;}
                            QProgressBar::chunk:horizontal{ background: rgb(240,60,40); 
                            border-radius: 9px;}"""
+
     #tamaño maximo de cada progressbar
-    max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 10, 10, 50, 50, 10, 10, 10, 10, 10, 10, 10, 10]
+    max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 3, 3, 50, 50, 10, 10, 10, 10, 10, 10, 10, 10]
 
     def __init__(self):
         super().__init__()
@@ -59,8 +61,8 @@ class Filters(QMainWindow):
         self.pgad        = QLabel("PGAD:          0%")
         self.phd         = QLabel("PHD:           0%")
         self.pad         = QLabel("PAD:           0%")
-        self.ppghome     = QLabel("PPGHome:        0")
-        self.ppgaway     = QLabel("PPGAway:        0")
+        self.ppghome     = QLabel("PPGHome:  0.0-3.0")
+        self.ppgaway     = QLabel("PPGAway:  0.0-3.0")
         self.tgpg        = QLabel("TGPG:     0.0-5.0")
         self.pjhome      = QLabel("PJHome:         0")
         self.pjaway      = QLabel("PJAway:         0")
@@ -134,6 +136,7 @@ class Filters(QMainWindow):
         #Tabla
         self.loadData = QPushButton("Load data")
         self.table = CustomTableWidget()
+        self.table.progress.connect(self.update_progress)
 
         #conectores
         self.ptajeBarPGHD.valueChanged.connect(self.actualizarPGHD)
@@ -150,8 +153,9 @@ class Filters(QMainWindow):
         self.loadData.clicked.connect(self.loadDatabase)
         self.reset.clicked.connect(self.resetThigs)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
+        self.table.secondTable.horizontalHeader().sectionClicked.connect(self.sortTable)
         self.table.verticalScrollBar().valueChanged.connect(self.printTheProgressBars)
-        self.table.itemClicked.connect(self.gimmeDaAnalisis)
+        #self.table.itemClicked.connect(self.gimmeDaAnalisis)
         self.table.secondTable.itemClicked.connect(self.openBrowser)
         self.setleagues.clicked.connect(self.leagueDialog)
 
@@ -412,7 +416,6 @@ class Filters(QMainWindow):
 
     def loadedData(self, data):
         
-        self.progressBar.hide()
         self.datos = data[0]
         self.currentDatos = self.datos
         self.table.setItems(self.currentDatos)
@@ -427,6 +430,7 @@ class Filters(QMainWindow):
         self.loadData.setText("Load data")
         self.getActualEmpates()
         self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
+        self.progressBar.hide()
         self.printTheProgressBars()
 
     def printTheProgressBars(self):
@@ -558,10 +562,10 @@ class Filters(QMainWindow):
         self.usedLeagues.addItems(self.activeLeagues)
         self.aplicarResultado()
 
-    def gimmeDaAnalisis(self):
-        dlg = AnaliticsDialog(self.currentDatos[self.table.currentRow()])
-        dlg.setWindowTitle("Game Statistics")
-        dlg.exec_()
+    # def gimmeDaAnalisis(self):
+    #     dlg = AnaliticsDialog(self.currentDatos[self.table.currentRow()])
+    #     dlg.setWindowTitle("Game Statistics")
+    #     dlg.exec_()
 
     def openBrowser(self, item):
         if self.table.secondTable.column(item) == 0:

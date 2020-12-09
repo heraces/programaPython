@@ -1,8 +1,9 @@
 from PyQt5.QtWidgets import QTableWidget, QHeaderView, QTableWidgetItem
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 
 
 class CustomTableWidget(QTableWidget):
+    progress = pyqtSignal(float)
     def __init__(self):
         super(CustomTableWidget, self).__init__()
         #creamos la tablewidget como hicimos antes
@@ -68,19 +69,7 @@ class CustomTableWidget(QTableWidget):
         self.secondTable.setGeometry(
                 self.verticalHeader().width() + self.frameWidth(),
                 self.frameWidth(), self.columnWidth(0)+self.columnWidth(1)+self.columnWidth(2)+self.columnWidth(3)+self.columnWidth(4),
-                self.viewport().height() + self.horizontalHeader().height())
-
-    def moveCursor(self, cursorAction, modifiers):
-        current = super(CustomTableWidget, self).moveCursor(cursorAction, modifiers)
-        if (cursorAction == self.MoveLeft and self.current.column() > 0 and
-                 self.visualRect(current).topLeft().x() < self.secondTable.columnWidth(0)):
-            
-            newValue = (self.horizontalScrollBar().value() + self.visualRect(current).topLeft().x() -
-                        self.secondTable.columnWidth(0))
-
-            self.horizontalScrollBar().setValue(newValue)
-        return current
-   
+                self.viewport().height() + self.horizontalHeader().height())   
 
     def setItems(self, datos):
         self.setRowCount(len(datos))
@@ -117,4 +106,6 @@ class CustomTableWidget(QTableWidget):
             self.setItem(fila, 20, QTableWidgetItem(str(row[20])))
 
             fila += 1
+            if fila % 2000 == 0:
+                self.progress.emit(fila/len(datos)*100)
         self.secondTable.show()

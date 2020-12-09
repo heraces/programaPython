@@ -14,6 +14,7 @@ import webbrowser
 
 class Predictions(QMainWindow):
     testingValues = pyqtSignal(list)
+
     sfecha = (datetime.today()+timedelta(days=1)).strftime('%Y%m%d')
     chargestring = f"""SELECT ID_HOME, ID_AWAY, DATE, TIME, FTHG, FTAG, ODDS_1, ODDS_2, ODDS_UNDER25FT, 
                         HW, HD, HL, AW, AD, AL, GOALSGH, GOALSGA, GOALCGH, GOALCGA, REH, REA, REHH, REAA, HHW, HHD, HHL, 
@@ -30,7 +31,7 @@ class Predictions(QMainWindow):
                            border-radius: 9px;}"""    
                            
     #tamaño maximo de cada progressbar
-    max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 10, 10, 50, 50, 10, 10, 10, 10, 10, 10, 10, 10]
+    max_list = [0,0,0,0,0, 100, 100, 100, 100, 5, 3, 3, 50, 50, 10, 10, 10, 10, 10, 10, 10, 10]
 
     def __init__(self):
         super().__init__()
@@ -48,8 +49,8 @@ class Predictions(QMainWindow):
         self.pgad        = QLabel("PGAD:          0%")
         self.phd         = QLabel("PHD:           0%")
         self.pad         = QLabel("PAD:           0%")
-        self.ppghome     = QLabel("PPGHome:        0")
-        self.ppgaway     = QLabel("PPGAway:        0")
+        self.ppghome     = QLabel("PPGHome:  0.0-3.0")
+        self.ppgaway     = QLabel("PPGAway:  0.0-3.0")
         self.tgpg        = QLabel("TGPG:     0.0-5.0")
         self.pjhome      = QLabel("PJHome:         0")
         self.pjaway      = QLabel("PJAway:         0")
@@ -122,6 +123,7 @@ class Predictions(QMainWindow):
         #Tabla
         self.loadData = QPushButton("Load Data")
         self.table = CustomTableWidget()
+        self.table.progress.connect(self.update_progress)
 
         #databases y tal
         self.datos =[]
@@ -145,6 +147,7 @@ class Predictions(QMainWindow):
         self.save.clicked.connect(self.guardarSetts)
         self.binding.clicked.connect(self.conectarConTablaAnterior)
         self.table.horizontalHeader().sectionClicked.connect(self.sortTable)
+        self.table.secondTable.horizontalHeader().sectionClicked.connect(self.sortTable)
         self.table.verticalScrollBar().valueChanged.connect(self.printTheProgressBars)
         self.loadData.clicked.connect(self.loadDatabase)
         self.aplicar.clicked.connect(self.aplicarResultado)
@@ -358,7 +361,6 @@ class Predictions(QMainWindow):
 
 
     def loadedData(self, data):
-        self.progressBar.hide()
         self.datos = data[0]
         self.currentDatos = self.datos
         self.table.setItems(self.currentDatos)
@@ -375,6 +377,7 @@ class Predictions(QMainWindow):
         self.loadData.setText("Load data")
         self.getActualEmpates()
         self.partidos.setText(str(len(self.currentDatos)) + " Partidos")
+        self.progressBar.hide()
 
 
     def printTheProgressBars(self):
