@@ -45,19 +45,21 @@ class Predictions(QMainWindow):
         self.filtros.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.filterProfile = QLabel("-")
         self.filterProfile.setStyleSheet("font-size: 15px; font-weight: bold; color: gray")
-        self.pghd        = QLabel("PGHD:          0%")
-        self.pgad        = QLabel("PGAD:          0%")
-        self.phd         = QLabel("PHD:           0%")
-        self.pad         = QLabel("PAD:           0%")
-        self.ppghome     = QLabel("PPGHome:  0.0-3.0")
-        self.ppgaway     = QLabel("PPGAway:  0.0-3.0")
-        self.tgpg        = QLabel("TGPG:     0.0-5.0")
-        self.pjhome      = QLabel("PJHome:         0")
-        self.pjaway      = QLabel("PJAway:         0")
-        self.rempate     = QLabel("REmpate:        0")
-        self.odd1        = QLabel("ODD1:    0.0-10.0")
-        self.odd2        = QLabel("ODD2:    0.0-10.0")
-        self.odd_under25 = QLabel("UNDER25: 0.0-10.0")
+        self.pghd        = QLabel("PGHD:           0%")
+        self.pgad        = QLabel("PGAD:           0%")
+        self.phd         = QLabel("PHD:            0%")
+        self.pad         = QLabel("PAD:            0%")
+        self.ppghome     = QLabel("PPGHome:   0.0-3.0")
+        self.ppgaway     = QLabel("PPGAway:   0.0-3.0")
+        self.tgpg        = QLabel("TGPG:      0.0-5.0")
+        self.pjhome      = QLabel("PJHome:          0")
+        self.pjaway      = QLabel("PJAway:          0")
+        self.rempate     = QLabel("REmpate:         0")
+        self.odd1        = QLabel("ODD1:     0.0-10.0")
+        self.odd2        = QLabel("ODD2:     0.0-10.0")
+        self.odd_under25 = QLabel("UNDER25:  0.0-10.0")
+        self.difPuntos   = QLabel("difPts:     -20-20")
+        self.difPuntosHA = QLabel("difPtsHA:   -20-20")
 
         #buttons
         self.aplicar = QPushButton("Aplicar")
@@ -82,6 +84,8 @@ class Predictions(QMainWindow):
         self.ptajeBarODD1 = DobleSlider(380, 20, 0, 10, 0.2, self.odd1)
         self.ptajeBarODD2 = DobleSlider(380, 20, 0, 10, 0.2, self.odd2)
         self.ptajeBarUNDER25 = DobleSlider(380, 20, 0, 10, 0.2, self.odd_under25)
+        self.ptajeBarPTS = DobleSlider(380, 20, -20, 20, 1, self.difPuntos)
+        self.ptajeBarPTSHA = DobleSlider(380, 20, -20, 20, 1, self.difPuntosHA)
 
         self.progressBar = QProgressBar()
         self.progressBar.hide()
@@ -198,10 +202,15 @@ class Predictions(QMainWindow):
         topLayout.addWidget(self.ptajeBarUNDER25, 8, 1, 1, 1)
         topLayout.addWidget(self.reset, 7, 4, 1, 1)
         topLayout.addWidget(self.setleagues, 9, 4, 1, 1)
-        topLayout.addWidget(self.labelFrom, 9, 0, 1, 1)
-        topLayout.addWidget(self.startDate, 9, 1, 1, 1)
-        topLayout.addWidget(self.labelTo, 9, 2, 1, 1)
-        topLayout.addWidget(self.endDate, 9, 3, 1, 1)
+        topLayout.addWidget(self.labelFrom, 10, 0, 1, 1)
+        topLayout.addWidget(self.startDate, 10, 1, 1, 1)
+        topLayout.addWidget(self.labelTo, 10, 2, 1, 1)
+        topLayout.addWidget(self.endDate, 10, 3, 1, 1)
+        
+        topLayout.addWidget(self.difPuntos, 9, 0, 1, 1)
+        topLayout.addWidget(self.ptajeBarPTS, 9, 1, 1, 1)
+        topLayout.addWidget(self.difPuntosHA, 9, 2, 1, 1)
+        topLayout.addWidget(self.ptajeBarPTSHA, 9, 3, 1, 1)
 
         midLayout.addWidget(self.resultados, 0, 0, 1, 1)
         midLayout.addWidget(self.ptajeEmpates, 1, 0, 1, 1)
@@ -297,6 +306,10 @@ class Predictions(QMainWindow):
         self.ptajeBarODD2.setLessThanHandler(esta[11][1])
         self.ptajeBarUNDER25.setBigerThanHandler(esta[12][0])
         self.ptajeBarUNDER25.setLessThanHandler(esta[12][1])
+        self.ptajeBarPTS.setBigerThanHandler(esta[13][0])
+        self.ptajeBarPTS.setLessThanHandler(esta[13][1])
+        self.ptajeBarPTSHA.setBigerThanHandler(esta[14][0])
+        self.ptajeBarPTSHA.setLessThanHandler(esta[14][1])
 
     def conectarConTablaAnterior(self):
         data = [self.ptajeBarPGHD.value(),
@@ -311,7 +324,9 @@ class Predictions(QMainWindow):
                         self.ptajeBarRempate.value(),
                         self.ptajeBarODD1.values(),
                         self.ptajeBarODD2.values(),
-                        self.ptajeBarUNDER25.values()
+                        self.ptajeBarUNDER25.values(),
+                        self.ptajeBarPTS.values(),
+                        self.ptajeBarPTSHA.values()
                         ]
         self.testingValues.emit(data)
 
@@ -468,6 +483,16 @@ class Predictions(QMainWindow):
                                     (isinstance(elemento[20], float) and elemento[20] >= self.ptajeBarUNDER25.getBigerThanHandler()
                                     and self.ptajeBarUNDER25.getLessThanHandler() >= elemento[20]))):
                     isIn = False
+                                    
+                elif not((self.ptajeBarPTS.getBigerThanHandler() <= 0 and (isinstance(elemento[21], str))) or (
+                                 (isinstance(elemento[21], float) and elemento[21] >= self.ptajeBarPTS.getBigerThanHandler()
+                                 and (self.ptajeBarPTS.getLessThanHandler() >= elemento[21] or self.ptajeBarPTS.isMaxLessHandler())))):
+                    isIn = False
+                elif not((self.ptajeBarPTSHA.getBigerThanHandler() <= 0 and (isinstance(elemento[22], str))) or (
+                                 (isinstance(elemento[22], float) and elemento[22] >= self.ptajeBarPTSHA.getBigerThanHandler()
+                                 and (self.ptajeBarPTSHA.getLessThanHandler() >= elemento[22] or self.ptajeBarPTSHA.isMaxLessHandler())))):
+                    isIn = False
+
                 
                 if  isIn:
                     self.currentDatos.append(elemento)
@@ -505,6 +530,8 @@ class Predictions(QMainWindow):
         self.ptajeBarODD1.reset()
         self.ptajeBarODD2.reset()
         self.ptajeBarUNDER25.reset()
+        self.ptajeBarPTSHA.reset()
+        self.ptajeBarPTS.reset()
         
         self.activeLeagues = []
         self.usedLeagues.clear()
@@ -524,6 +551,8 @@ class Predictions(QMainWindow):
         self.ptajeBarTGPG.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
         self.ptajeBarPPGHome.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
         self.ptajeBarPPGAway.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
+        self.ptajeBarPTSHA.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
+        self.ptajeBarPTS.resizeWidth( width = self.ptajeBarPJAway.width(), height = self.ptajeBarPJAway.height())
 
     def toDate(self, elemento):
         return QDate(int(elemento[-4:]), int(elemento[3:5]), int( elemento[:2]))

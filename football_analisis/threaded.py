@@ -104,6 +104,8 @@ class ChargeDatabase(QRunnable):
             maRalla.append(row["ODDS_UNDER25FT"])
             maRalla.append(row["ID_LEAGUE"])
             maRalla.append(row["ID"])
+            maRalla.append(self.getpuntosDif(row))
+            maRalla.append(self.getDiffPtsHA(row))
 
             datos.append(maRalla)
             if(len(datos) % 1000):
@@ -164,6 +166,10 @@ class ChargeDatabase(QRunnable):
             return round(row["AAD"] / (row["AAW"] + row["AAD"]+ row["AAL"])* 100, 3) 
 
         return "N/D"
+    
+    def getDiffPtsHA(self, row):
+            return 3*row["HHW"] + row["HHD"] - (3 * row["AAW"] + row["AAD"])
+
 
     def getTotalGoalsInGame(self, row):
         if row["AW"] + row["AD"]+ row["AL"] != 0 or row["HW"] + row["HD"]+ row["HL"] != 0:
@@ -187,6 +193,9 @@ class ChargeDatabase(QRunnable):
         if row["AW"] + row["AD"]+ row["AL"] != 0:
             return round((3*row["AW"] + row["AD"])/(row["AW"] + row["AD"]+ row["AL"]), 3)
         return "N/D"
+
+    def getpuntosDif(self, row):
+            return (3*row["HW"] + row["HD"])-(3*row["AW"] + row["AD"])
 
     def getPJHome(self, row):
         return row["HW"] + row["HD"]+ row["HL"]

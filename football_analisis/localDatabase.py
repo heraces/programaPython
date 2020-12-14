@@ -28,6 +28,8 @@ class SaveDialog(QDialog):
         self.odd1 = QLabel("ODD1:")
         self.odd2 = QLabel("ODD2:")
         self.odd_under25 = QLabel("UNDER25:")
+        self.pts = QLabel("PTS:")
+        self.ptsHA = QLabel("PTS HA:")
 
         # los checkbox
         self.allCheck = QCheckBox()
@@ -59,6 +61,10 @@ class SaveDialog(QDialog):
         self.odd2Check.setCheckable(True)
         self.odd_under25Check = QCheckBox()
         self.odd_under25Check.setCheckable(True)
+        self.ptsCheck = QCheckBox()
+        self.ptsCheck.setCheckable(True)
+        self.ptsHACheck = QCheckBox()
+        self.ptsHACheck.setCheckable(True)
         self.isChecked = True
 
         #labels value
@@ -75,6 +81,8 @@ class SaveDialog(QDialog):
         self.odd1Value = QLabel(self.maninWindow.ptajeBarODD1.valuesToString())
         self.odd2Value = QLabel(self.maninWindow.ptajeBarODD2.valuesToString())
         self.odd_under25Value = QLabel(self.maninWindow.ptajeBarUNDER25.valuesToString())
+        self.ptsValue = QLabel(self.maninWindow.ptajeBarPTS .valuesToString())
+        self.ptsHAValue = QLabel(self.maninWindow.ptajeBarPTSHA.valuesToString())
 
         #saved data
         self.ssavedData = QLabel("Saved Data:")
@@ -91,6 +99,8 @@ class SaveDialog(QDialog):
         self.sodd1 = QLabel("|")
         self.sodd2 = QLabel("|")
         self.sodd_under25 = QLabel("|")
+        self.spts = QLabel("|")
+        self.sptsha = QLabel("|")
 
         #saved value
         self.spghdValue = QLabel("0")
@@ -106,6 +116,8 @@ class SaveDialog(QDialog):
         self.sodd1Value = QLabel("0-10")
         self.sodd2Value = QLabel("0-10")
         self.sodd_under25Value = QLabel("0-10")
+        self.sptsValue = QLabel("-10-10")
+        self.sptsHAValue = QLabel("-10-10")
 
         self.listProfiles = QListWidget()
         self.listProfiles.setGeometry(50, 70, 150, 60) 
@@ -143,6 +155,8 @@ class SaveDialog(QDialog):
         self.odd1Check.clicked.connect(self.checkBoxManager)
         self.odd2Check.clicked.connect(self.checkBoxManager)
         self.odd_under25Check.clicked.connect(self.checkBoxManager)
+        self.ptsCheck.clicked.connect(self.checkBoxManager)
+        self.ptsHACheck.clicked.connect(self.checkBoxManager)
 
 
         #other things
@@ -170,6 +184,8 @@ class SaveDialog(QDialog):
         dataLayout.addWidget(self.odd1Check, 11, 0, 1, 1)
         dataLayout.addWidget(self.odd2Check, 12, 0, 1, 1)
         dataLayout.addWidget(self.odd_under25Check, 13, 0, 1, 1) 
+        dataLayout.addWidget(self.ptsCheck, 14, 0, 1, 1)
+        dataLayout.addWidget(self.ptsHACheck, 15, 0, 1, 1) 
 
         #actual labels
         dataLayout.addWidget(self.actual, 0, 1, 1, 1)
@@ -186,6 +202,8 @@ class SaveDialog(QDialog):
         dataLayout.addWidget(self.odd1, 11, 1, 1, 1)
         dataLayout.addWidget(self.odd2, 12, 1, 1, 1)
         dataLayout.addWidget(self.odd_under25, 13, 1, 1, 1) 
+        dataLayout.addWidget(self.pts, 14, 1, 1, 1)
+        dataLayout.addWidget(self.ptsHA, 15, 1, 1, 1) 
         
         #values
         dataLayout.addWidget(self.pghdValue, 1, 2, 1, 1)
@@ -201,6 +219,8 @@ class SaveDialog(QDialog):
         dataLayout.addWidget(self.odd1Value, 11, 2, 1, 1)
         dataLayout.addWidget(self.odd2Value, 12, 2, 1, 1)
         dataLayout.addWidget(self.odd_under25Value, 13, 2, 1, 1)
+        dataLayout.addWidget(self.ptsValue, 14, 2, 1, 1)
+        dataLayout.addWidget(self.ptsHAValue, 15, 2, 1, 1)
 
        #saved labels
         dataLayout.addWidget(self.ssavedData, 0, 4, 1, 1)
@@ -217,6 +237,8 @@ class SaveDialog(QDialog):
         dataLayout.addWidget(self.sodd1, 11, 3, 1, 1)
         dataLayout.addWidget(self.sodd2, 12, 3, 1, 1)
         dataLayout.addWidget(self.sodd_under25, 13, 3, 1, 1)
+        dataLayout.addWidget(self.spts, 14, 3, 1, 1)
+        dataLayout.addWidget(self.sptsha, 15, 3, 1, 1)
 
         #saved values
         dataLayout.addWidget(self.spghdValue, 1, 4, 1, 1)
@@ -232,8 +254,10 @@ class SaveDialog(QDialog):
         dataLayout.addWidget(self.sodd1Value, 11, 4, 1, 1)
         dataLayout.addWidget(self.sodd2Value, 12, 4, 1, 1)
         dataLayout.addWidget(self.sodd_under25Value, 13, 4, 1, 1)
+        dataLayout.addWidget(self.sptsValue, 14, 4, 1, 1)
+        dataLayout.addWidget(self.sptsHAValue, 15, 4, 1, 1)
 
-        dataLayout.setColumnStretch(5,1)
+        dataLayout.setColumnStretch(5, 1)
 
         #buttons
         settsLayout.addWidget(self.save)
@@ -251,7 +275,7 @@ class SaveDialog(QDialog):
         mainLayout.addLayout(bottomLayout)
 
         self.setLayout(mainLayout)
-        self.setFixedSize(QSize(420, 500))
+        self.setFixedSize(QSize(420, 550))
 
     def deleteSelected(self):
         if len(self.listProfiles.selectedItems()) > 0:
@@ -296,7 +320,8 @@ class SaveDialog(QDialog):
                             with open('svdStngs.json', "w") as json_file:
                                 data[text] = {"PGHD" : 0, "PGAD" : 0, "PHD" : 0, "PAD" : 0,"TGPG" : [0, 1], 
                                         "PPGHome" : [0, 3], "PPGAway" : [0, 3], "PJHome" : 0, "PJAway" : 0, "REmpate" : 0,
-                                        "ODDS1" : [0, 1], "ODDS2" : [0, 1], "ODDS_UNDER25" : [0, 1]}
+                                        "ODDS1" : [0, 1], "ODDS2" : [0, 1], "ODDS_UNDER25" : [0, 1],
+                                         "Dif puntos" : [-10, 10], "Dif puntosHA": [-10,-10]}
                                 json.dump(data, json_file)
                             self.actualizarLista()
                             
@@ -331,6 +356,10 @@ class SaveDialog(QDialog):
                                                     str(round(data[self.listProfiles.currentItem().text()]["ODDS2"][1],2)))
                 self.sodd_under25Value.setText(str(round(data[self.listProfiles.currentItem().text()]["ODDS_UNDER25"][0],2))+ "-" + 
                                                     str(round(data[self.listProfiles.currentItem().text()]["ODDS_UNDER25"][1],2)))
+                self.sptsValue.setText(str(round(data[self.listProfiles.currentItem().text()]["Dif puntos"][0],2))+ "-" + 
+                                                    str(round(data[self.listProfiles.currentItem().text()]["Dif puntos"][1],2)))
+                self.sptsHAValue.setText(str(round(data[self.listProfiles.currentItem().text()]["Dif puntosHA"][0],2))+ "-" + 
+                                                    str(round(data[self.listProfiles.currentItem().text()]["Dif puntosHA"][1],2)))
        
     def actualizarLista(self):    
         with open('svdStngs.json', "r") as json_file:
@@ -383,6 +412,10 @@ class SaveDialog(QDialog):
                 dic["ODDS2"] = self.maninWindow.ptajeBarODD2.values()
             if self.odd_under25Check.isChecked():
                 dic["ODDS_UNDER25"] = self.maninWindow.ptajeBarUNDER25.values()
+            if self.ptsCheck.isChecked():
+                dic["Dif puntos"] = self.maninWindow.ptajeBarPTS.values()
+            if self.ptsHACheck.isChecked():
+                dic["Dif puntosHA"] = self.maninWindow.ptajeBarPTSHA.values()
 
             data[self.listProfiles.currentItem().text()] = dic
 
@@ -430,6 +463,12 @@ class SaveDialog(QDialog):
                 if self.ppgawayCheck.isChecked():
                     self.maninWindow.ptajeBarPPGHome.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["PPGAway"][0])
                     self.maninWindow.ptajeBarPPGHome.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["PPGAway"][1])
+                if self.ptsCheck.isChecked():
+                    self.maninWindow.ptajeBarPTS.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["Dif puntos"][0])
+                    self.maninWindow.ptajeBarPTS.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["Dif puntos"][1])
+                if self.ppgawayCheck.isChecked():
+                    self.maninWindow.ptajeBarPTSHA.setBigerThanHandler(data[self.listProfiles.selectedItems()[0].text()]["Dif puntosHA"][0])
+                    self.maninWindow.ptajeBarPTSHA.setLessThanHandler(data[self.listProfiles.selectedItems()[0].text()]["Dif puntosHA"][1])
 
                 
             self.maninWindow.filterProfile.setText(self.listProfiles.selectedItems()[0].text() + " -profile")
@@ -464,6 +503,10 @@ class SaveDialog(QDialog):
             self.isChecked = False
         elif not self.odd_under25Check.isChecked():
             self.isChecked = False
+        elif not self.ptsCheck.isChecked():
+            self.isChecked = False
+        elif not self.ptsHACheck.isChecked():
+            self.isChecked = False
             
         self.allCheck.setChecked(self.isChecked)
 
@@ -483,6 +526,8 @@ class SaveDialog(QDialog):
             self.odd1Check.setChecked(True)
             self.odd2Check.setChecked(True)
             self.odd_under25Check.setChecked(True)
+            self.ptsCheck.setChecked(True)
+            self.ptsHACheck.setChecked(True)
 
         else:
             self.isChecked = False
@@ -499,3 +544,5 @@ class SaveDialog(QDialog):
             self.odd1Check.setChecked(False)
             self.odd2Check.setChecked(False)
             self.odd_under25Check.setChecked(False)
+            self.ptsCheck.setChecked(False)
+            self.ptsHACheck.setChecked(False)

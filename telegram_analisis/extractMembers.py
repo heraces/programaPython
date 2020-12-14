@@ -9,9 +9,9 @@ from PyQt5.QtCore import QSize
 import sys
 import csv
 
-api_id = #API
-api_hash = #HAS
-phone = #TLF (INT)
+api_id = 2593180#API
+api_hash = "a1bf316371072db7e96fef21d137d049"#HAS
+phone = 34671995283#TLF (INT)
 
 class MainWindow(QMainWindow):
     def __init__(self):
