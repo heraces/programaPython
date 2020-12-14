@@ -9,9 +9,9 @@ from PyQt5.QtCore import QSize
 import sys
 import csv
 
-api_id = 2593180#API
-api_hash = "a1bf316371072db7e96fef21d137d049"#HAS
-phone = 34671995283#TLF (INT)
+api_id = #API
+api_hash = #HAS
+phone = #TLF (INT)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -46,11 +46,12 @@ class MainWindow(QMainWindow):
         self.all_participants = []
         self.all_participants = self.client.get_participants(target_group, aggressive=True)
 
+
         #saving file
         with open("SBWS.csv","w",encoding='UTF-8') as f:
             writer = csv.writer(f,delimiter=";",lineterminator="\n")
             #writer.writerow(['username','user id', 'access hash','name','group', 'group id'])
-            for group in self.all_participants:
+            for user in self.all_participants:
                 if not user.is_self:
                     if user.username:
                         username= user.username
