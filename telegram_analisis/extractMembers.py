@@ -2,22 +2,22 @@ from telethon.sync import TelegramClient
 from telethon.tl.functions.messages import GetDialogsRequest
 from telethon.tl.types import InputPeerEmpty
 
-from PyQt5.QtWidgets import (QTableWidget, QApplication, QMainWindow, QWidget, QComboBox, QLabel,
-                             QVBoxLayout, QInputDialog, QTableWidgetItem, QHeaderView)
-from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import (QTableWidget, QApplication, QMainWindow, QWidget, QComboBox, QLabel, 
+                             QVBoxLayout, QInputDialog, QTableWidgetItem, QHeaderView, QMessageBox)
+from PyQt5.QtCore import QSize, Qt
 
 import sys
 import csv
 
-api_id = 2593180#API
-api_hash = "a1bf316371072db7e96fef21d137d049"#HAS
-phone = 34671995283#TLF (INT)
+api_id = #API
+api_hash = #HAS
+phone = #TLF (INT)
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Users telegram Channel")
-        self.init()#set up te app view
+        self.init()#sets up the app view
 
         #creamos el cliente
         self.client = TelegramClient('BetApuestas_Session', api_id, api_hash)
@@ -30,45 +30,17 @@ class MainWindow(QMainWindow):
                 self.client.send_code_request(phone)
                 self.client.sign_in(phone, text)
 
-        #we get thte channels
-        self.groups=[]
+        #we get the channels
+        self.dic = {}
+        self.groups = []
         for chat in self.client.iter_dialogs():
             try:
                 if chat.is_channel:
                     self.groups.append(chat)
+                    self.dic[chat.title] = False
                     self.channelList.addItem(chat.title)
             except:
                 continue
-
-        #tomamos el primer channel 
-        target_group = self.groups[self.channelList.currentIndex()]
-
-        self.all_participants = []
-        self.all_participants = self.client.get_participants(target_group, aggressive=True)
-
-
-        #saving file
-        with open("SBWS.csv","w",encoding='UTF-8') as f:
-            writer = csv.writer(f,delimiter=";",lineterminator="\n")
-            #writer.writerow(['username','user id', 'access hash','name','group', 'group id'])
-            for user in self.all_participants:
-                if not user.is_self:
-                    if user.username:
-                        username= user.username
-                    else:
-                        username= ""
-                    if user.first_name:
-                        first_name= user.first_name
-                    else:
-                        first_name= ""
-                    if user.last_name:
-                        last_name= user.last_name
-                    else:
-                        last_name= ""
-                    writer.writerow([username, first_name, last_name, user.phone])      
-
-        self.showTable()
-
 
     def init(self):
         widget = QWidget()
@@ -83,6 +55,8 @@ class MainWindow(QMainWindow):
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["alias", "first name", "last name", "phone number"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.horizontalHeader().sectionClicked.connect(self.ordenar)
+
 
         layout.addWidget(mainLabel)
         layout.addWidget(self.channelList)
@@ -96,9 +70,24 @@ class MainWindow(QMainWindow):
 
     #cambiamos participantes y tal
     def changeChannel(self, index):
-        target_group= self.groups[self.channelList.currentIndex()]
-        self.all_participants = self.client.get_participants(target_group, aggressive=True)
-        self.showTable()
+        if len(self.groups) > 0: 
+            #si no hemos guardado ese canal lo guardamos
+            if not self.dic[self.channelList.currentText()]:
+                target_group= self.groups[self.channelList.currentIndex()]
+                self.all_participants = self.client.get_participants(target_group, aggressive=True)
+                self.dic[self.channelList.currentText()] = True
+                self.save()
+
+            self.showTable()
+
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("This account owns no channel")
+            msg.setWindowTitle("You have no channels")
+            msg.exec_()
+
+
 
     #cuando cerramos cerramos el cliente
     def close(self):
@@ -108,7 +97,8 @@ class MainWindow(QMainWindow):
     #poblamos la tabla
     def showTable(self):
         self.table.clearContents()
-        with open("SBWS.csv","r",encoding='UTF-8') as f:
+        name = self.channelList.currentText() + ".csv"
+        with open(name,"r",encoding='UTF-8') as f:
             data = list(csv.reader(f,delimiter=";",lineterminator="\n"))
             self.table.setRowCount(len(data))
             fila = 0
@@ -117,9 +107,59 @@ class MainWindow(QMainWindow):
                 self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
                 self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
                 self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+
+                self.table.item(fila, 0).setTextAlignment(Qt.AlignHCenter)
+                self.table.item(fila, 1).setTextAlignment(Qt.AlignHCenter)
+                self.table.item(fila, 2).setTextAlignment(Qt.AlignHCenter)
+                self.table.item(fila, 3).setTextAlignment(Qt.AlignHCenter)
                 fila += 1
               
+    def save(self):
+        name = self.channelList.currentText() + ".csv"
+        with open(name,"w",encoding='UTF-8') as f:
+            writer = csv.writer(f,delimiter=";",lineterminator="\n")
+            for user in self.all_participants:
+                if not user.is_self:
+                    if user.username:
+                        username= user.username
+                    else:
+                        username= ""
+                    if user.first_name:
+                        first_name= user.first_name
+                    else:
+                        first_name= ""
+                    if user.last_name:
+                        last_name= user.last_name
+                    else:
+                        last_name= ""
+                    writer.writerow([username, first_name, last_name, user.phone])  
 
+    def ordenar(self, sortingColumn):
+        if len(self.groups) > 0: 
+            arrangeList = []
+            name = self.channelList.currentText() + ".csv"
+            with open(name,"r",encoding='UTF-8') as f:
+                arrangeList.extend(list(csv.reader(f,delimiter=";",lineterminator="\n")))
+
+            for indice in range(len(arrangeList)-1, 0, -1):
+                for sorting in range(indice):
+                    if arrangeList[sorting][sortingColumn] > arrangeList[indice][sortingColumn]:
+                        line = arrangeList[indice]
+                        arrangeList[indice] = arrangeList[sorting]
+                        arrangeList[sorting] = line
+            
+            with open(name,"w",encoding='UTF-8') as f:
+                writer = csv.writer(f,delimiter=";",lineterminator="\n")
+                for item in arrangeList:
+                    writer.writerow(item)
+
+            self.showTable()
+
+    def update_progress(self):
+        pass
+            
+       
+        self.showTable()
 
 app = QApplication(sys.argv)
 window = MainWindow()

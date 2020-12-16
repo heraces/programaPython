@@ -39,6 +39,9 @@ class DobleSlider(QWidget):
         self.eselRigth = False
         self.initPos = 0
 
+        #editamos el texto al iniciar
+        self.editText()
+
         #esto no se borra
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -111,7 +114,7 @@ class DobleSlider(QWidget):
                 self.rigthLeft = event.x()-self.handleWidth/2
                 return
 
-
+    # getters and setters de muchos tipos
     def getBigerThanHandler(self):
         return round(self.start + (self.leftPos * self.interval),3)
 

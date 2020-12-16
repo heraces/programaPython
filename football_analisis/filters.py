@@ -366,15 +366,14 @@ class Filters(QMainWindow):
                                  and (self.ptajeBarUNDER25.getLessThanHandler() >= elemento[20] or self.ptajeBarUNDER25.isMaxLessHandler())))):
                     isIn = False
                 
-                elif not((self.ptajeBarPTS.getBigerThanHandler() <= 0 and (isinstance(elemento[23], str))) or (
-                                 (isinstance(elemento[23], int) and elemento[23] >= self.ptajeBarPTS.getBigerThanHandler()
-                                 and (self.ptajeBarPTS.getLessThanHandler() >= elemento[23] or self.ptajeBarPTS.isMaxLessHandler())))):
+                elif not((self.ptajeBarPTS.isLowest() or elemento[23] >= self.ptajeBarPTS.getBigerThanHandler()) and
+                                 (self.ptajeBarPTS.getLessThanHandler() >= elemento[23] or self.ptajeBarPTS.isMaxLessHandler())):
                     isIn = False
 
-                elif not((self.ptajeBarPTSHA.getBigerThanHandler() <= 0 and (isinstance(elemento[24], str))) or (
-                                 (isinstance(elemento[24], int) and elemento[24] >= self.ptajeBarPTSHA.getBigerThanHandler()
-                                 and (self.ptajeBarPTSHA.getLessThanHandler() >= elemento[24] or self.ptajeBarPTSHA.isMaxLessHandler())))):
+                elif not((self.ptajeBarPTSHA.isLowest() or elemento[24] >= self.ptajeBarPTSHA.getBigerThanHandler()) and
+                                 (self.ptajeBarPTSHA.getLessThanHandler() >= elemento[24] or self.ptajeBarPTSHA.isMaxLessHandler())):
                     isIn = False
+                
                 
                 if  isIn:
                     self.currentDatos.append(elemento)
