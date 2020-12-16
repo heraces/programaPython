@@ -60,7 +60,7 @@ class Analisis(QMainWindow):
         self.reset = QPushButton("Reset")
         self.reset.clicked.connect(self.resetValues)
         self.default = QPushButton("Default")
-        self.default.clicked.connect(self.defaultValues)
+        self.default.clicked.connect(self.autoValue)
 
         #progres bar
         self.progressBar = QProgressBar()
@@ -93,6 +93,7 @@ class Analisis(QMainWindow):
 
         machesLayou.addWidget(self.matches)
         machesLayou.addWidget(self.partidos)
+        machesLayou.addStretch()
         machesLayou.addStretch()
         machesLayou.addWidget(self.progressBar)
 
@@ -127,13 +128,12 @@ class Analisis(QMainWindow):
     def cargarMatches(self):
         self.cargar.setEnabled(False)
         self.cargar.setText("Loading...")
-        self.progressBar.setValue(0)
         self.progressBar.show()
+        self.progressBar.setValue(0)
 
         #bajamos los datos
-        if len(self.data) <= 0:
-            response = requests.request("GET", self.url, headers=self.headers, data=self.payload)
-            self.data = ast.literal_eval(response.text)
+        response = requests.request("GET", self.url, headers=self.headers, data=self.payload)
+        self.data = ast.literal_eval(response.text)
 
         #filtramos
         self.datos = []
@@ -175,7 +175,7 @@ class Analisis(QMainWindow):
                 self.datos.append(lista)
                 self.partidosContador += 1
 
-            self.progressBar.setValue(contador/len(self.data["data"]))
+            self.progressBar.setValue(int(contador/len(self.data["data"]) *100))
             contador +=1
 
         self.partidos.setText("Partidos: " + str(self.partidosContador))
@@ -186,15 +186,14 @@ class Analisis(QMainWindow):
         self.cargar.setEnabled(True)
         self.progressBar.hide()
         self.cargar.setText("Load/Refresh")
-        auxFecha = datetime.now()
-        self.lastDate.setText("Last refresh: " + auxFecha.strftime("%H:%M:%S %d/%m/%y"))
+        self.lastDate.setText("Last refresh: " + datetime.now().strftime("%H:%M:%S %d/%m/%y"))
 
     
     def changeSize(self):
-        self.ptajeBarODD1.resizeWidth( width = self.widget.width()/10*9, height = self.ptajeBarODD1.height)
-        self.ptajeBarODD2.resizeWidth( width = self.widget.width()/10*9, height = self.ptajeBarODD1.height)
-        self.ptajeBarUNDER25.resizeWidth( width = self.widget.width()/10*9, height = self.ptajeBarODD1.height)
-        self.ptajeDifOds.resizeWidth( width = self.widget.width()/10*9, height = self.ptajeBarODD1.height)
+        self.ptajeBarODD1.resizeWidth(width = self.widget.width()/10*9, height = self.ptajeBarODD1.height)
+        self.ptajeBarODD2.resizeWidth(width = self.widget.width()/10*9, height = self.ptajeBarODD1.height)
+        self.ptajeBarUNDER25.resizeWidth(width = self.widget.width()/10*9, height = self.ptajeBarODD1.height)
+        self.ptajeDifOds.resizeWidth(width = self.widget.width()/10*9, height = self.ptajeBarODD1.height)
 
     def resizeEvent(self, event):#sobreescribimos el metodo
         self.changeSize()
@@ -223,11 +222,11 @@ class Analisis(QMainWindow):
     def endBar(self):
         self.progressBar.hide()
         self.table.clearContents()
-    
         self.popularLaTabla()
 
     def popularLaTabla(self):
         self.table.setRowCount(len(self.datos))
+        self.progressBar.show()
         self.progressBar.setValue(0)
         fila = 0
         for dato in self.datos:
@@ -240,8 +239,10 @@ class Analisis(QMainWindow):
             self.table.setItem(fila, 6, QTableWidgetItem(str(round(dato[6], 3))))
             self.table.setItem(fila, 7, QTableWidgetItem(str(round(dato[7], 3))))
             self.table.setItem(fila, 8, QTableWidgetItem(str(round(dato[8], 3))))
-            fila += 1
             self.progressBar.setValue(fila/len(self.datos))
+            fila += 1
+        
+        self.progressBar.hide()
             
     def getDate(self, fecha):
         return fecha[8:] + "/" + fecha[5:7] + "/" + fecha[:4]
@@ -256,20 +257,10 @@ class Analisis(QMainWindow):
         self.ptajeDifOds.setBigerThanHandler(self.restart_values[3][0])
         self.ptajeDifOds.setLessThanHandler(self.restart_values[3][1])
 
-    def defaultValues(self):
-        self.autoValue()
-        self.onlyToday.setChecked(False)
-        self.cargarMatches()
-
     def resetValues(self):
-        self.ptajeBarODD1.setBigerThanHandler(0)
-        self.ptajeBarODD1.setLessThanHandler(5)
-        self.ptajeBarODD2.setBigerThanHandler(0)
-        self.ptajeBarODD2.setLessThanHandler(5)
-        self.ptajeBarUNDER25.setBigerThanHandler(0)
-        self.ptajeBarUNDER25.setLessThanHandler(5)
-        self.ptajeDifOds.setBigerThanHandler(-5)
-        self.ptajeDifOds.setLessThanHandler(5)
+        self.ptajeBarODD1.reset()
+        self.ptajeBarODD2.reset()
+        self.ptajeBarUNDER25.reset()
+        self.ptajeDifOds.reset()
         self.onlyToday.setChecked(False)
-        self.cargarMatches()
         

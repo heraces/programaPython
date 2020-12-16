@@ -138,7 +138,7 @@ class DobleSlider(QWidget):
         return [self.start + self.leftPos * self.interval, self.start + self.rightPos * self.interval]
 
     def valuesToString(self):
-        return str(round(self.start + (self.leftPos * self.interval),2)) + "-" + str(round(self.start + (self.rightPos * self.interval),2))
+        return str(round(self.start + (self.leftPos * self.interval),1)) + "-" + str(round(self.start + (self.rightPos * self.interval),1))
 
     def isMaxLessHandler(self):
         return self.range/self.interval <= self.rightPos

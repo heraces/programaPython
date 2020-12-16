@@ -1,16 +1,14 @@
 from telethon.sync import TelegramClient
-from telethon.tl.functions.messages import GetDialogsRequest
-from telethon.tl.types import InputPeerEmpty
 
-from PyQt5.QtWidgets import (QTableWidget, QApplication, QMainWindow, QWidget, QComboBox, QLabel, 
-                             QVBoxLayout, QInputDialog, QTableWidgetItem, QHeaderView, QMessageBox)
+from PyQt5.QtWidgets import (QTableWidget, QApplication, QMainWindow, QWidget, QComboBox, QLabel, QProgressBar,
+                             QVBoxLayout, QHBoxLayout, QInputDialog, QTableWidgetItem, QHeaderView, QMessageBox)
 from PyQt5.QtCore import QSize, Qt
 
 import sys
 import csv
 
 api_id = #API
-api_hash = #HAS
+api_hash = #HASH
 phone = #TLF (INT)
 
 class MainWindow(QMainWindow):
@@ -26,7 +24,7 @@ class MainWindow(QMainWindow):
         #autentificamos
         if not self.client.is_user_authorized():
             text, ok = QInputDialog.getText(self, 'Autentication', "Confirm your autentication: ")
-            if ok and text != "":
+            if ok:
                 self.client.send_code_request(phone)
                 self.client.sign_in(phone, text)
 
@@ -45,8 +43,10 @@ class MainWindow(QMainWindow):
     def init(self):
         widget = QWidget()
         layout = QVBoxLayout()
+        progreslayout = QHBoxLayout()
         mainLabel = QLabel("Choose the channel")
         listLabel = QLabel("List of users of this channel")
+        self.progressbar = QProgressBar()
 
         self.channelList = QComboBox()
         self.channelList.currentIndexChanged.connect(self.changeChannel)
@@ -57,10 +57,13 @@ class MainWindow(QMainWindow):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.horizontalHeader().sectionClicked.connect(self.ordenar)
 
+        progreslayout.addWidget(listLabel)
+        progreslayout.addStretch()
+        progreslayout.addWidget(self.progressbar)
 
         layout.addWidget(mainLabel)
         layout.addWidget(self.channelList)
-        layout.addWidget(listLabel)
+        layout.addLayout(progreslayout)
         layout.addWidget(self.table)
 
         widget.setLayout(layout)
@@ -83,16 +86,9 @@ class MainWindow(QMainWindow):
         else:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Warning)
-            msg.setText("This account owns no channel")
+            msg.setText("This account owns no channels")
             msg.setWindowTitle("You have no channels")
             msg.exec_()
-
-
-
-    #cuando cerramos cerramos el cliente
-    def close(self):
-        self.client.disconnect()
-        super().close()
 
     #poblamos la tabla
     def showTable(self):
@@ -101,6 +97,8 @@ class MainWindow(QMainWindow):
         with open(name,"r",encoding='UTF-8') as f:
             data = list(csv.reader(f,delimiter=";",lineterminator="\n"))
             self.table.setRowCount(len(data))
+            self.progressbar.setValue(0)
+            self.progressbar.show()
             fila = 0
             for row in data:
                 self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
@@ -113,6 +111,10 @@ class MainWindow(QMainWindow):
                 self.table.item(fila, 2).setTextAlignment(Qt.AlignHCenter)
                 self.table.item(fila, 3).setTextAlignment(Qt.AlignHCenter)
                 fila += 1
+
+                self.progressbar.setValue(int(fila/len(data) * 100))
+
+            self.progressbar.hide()
               
     def save(self):
         name = self.channelList.currentText() + ".csv"
@@ -136,30 +138,36 @@ class MainWindow(QMainWindow):
 
     def ordenar(self, sortingColumn):
         if len(self.groups) > 0: 
+            self.progressbar.setValue(0)
+            self.progressbar.show()
             arrangeList = []
             name = self.channelList.currentText() + ".csv"
             with open(name,"r",encoding='UTF-8') as f:
                 arrangeList.extend(list(csv.reader(f,delimiter=";",lineterminator="\n")))
 
+            row = 0
             for indice in range(len(arrangeList)-1, 0, -1):
                 for sorting in range(indice):
                     if arrangeList[sorting][sortingColumn] > arrangeList[indice][sortingColumn]:
                         line = arrangeList[indice]
                         arrangeList[indice] = arrangeList[sorting]
                         arrangeList[sorting] = line
+
+                self.progressbar.setValue(int(row/len(arrangeList) *100))
+                row += 1
             
             with open(name,"w",encoding='UTF-8') as f:
                 writer = csv.writer(f,delimiter=";",lineterminator="\n")
                 for item in arrangeList:
                     writer.writerow(item)
 
+            self.progressbar.hide()
             self.showTable()
 
-    def update_progress(self):
-        pass
-            
-       
-        self.showTable()
+    #cuando cerramos cerramos el cliente
+    def close(self):
+        self.client.disconnect()
+        super().close()
 
 app = QApplication(sys.argv)
 window = MainWindow()

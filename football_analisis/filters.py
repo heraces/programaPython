@@ -244,34 +244,34 @@ class Filters(QMainWindow):
         self.setCentralWidget(globalWidgets)
 
     def actualizarPGHD(self):
-        self.pghd.setText("PGHD:        {}%".format(self.ptajeBarPGHD.value()))
+        self.pghd.setText("PGHD:           {}%".format(self.ptajeBarPGHD.value()))
     
     def actualizarPGAD(self):
-        self.pgad.setText("PGAD:        {}%".format(self.ptajeBarPGAD.value()))
+        self.pgad.setText("PGAD:           {}%".format(self.ptajeBarPGAD.value()))
 
     def actualizarPHD(self):
-        self.phd.setText("PHD:         {}%".format(self.ptajeBarPHD.value()))
+        self.phd.setText("PHD:            {}%".format(self.ptajeBarPHD.value()))
 
     def actualizarPAD(self):
-        self.pad.setText("PAD:         {}%".format(self.ptajeBarPAD.value()))
+        self.pad.setText("PAD:            {}%".format(self.ptajeBarPAD.value()))
         
     def actualizarPJHome(self):
         if self.ptajeBarPJHome.value() >= 50:
-            self.pjhome.setText("PJHome:      {}+".format(self.ptajeBarPJHome.value()))
+            self.pjhome.setText("PJHome:         {}+".format(self.ptajeBarPJHome.value()))
         else:
-            self.pjhome.setText("PJHome:       {}".format(self.ptajeBarPJHome.value()))
+            self.pjhome.setText("PJHome:          {}".format(self.ptajeBarPJHome.value()))
     
     def actualizarPJAway(self):
         if self.ptajeBarPJAway.value() >= 50:
-            self.pjaway.setText("PJAway:  {}+".format(self.ptajeBarPJAway.value()))
+            self.pjaway.setText("PJAway:         {}+".format(self.ptajeBarPJAway.value()))
         else:
-            self.pjaway.setText("PJAway:   {}".format(self.ptajeBarPJAway.value()))
+            self.pjaway.setText("PJAway:          {}".format(self.ptajeBarPJAway.value()))
     
     def actualizarRempate(self):
         if self.ptajeBarRempate.value() >= 10:
-            self.rempate.setText("Rempate:     {}+".format(self.ptajeBarRempate.value()))
+            self.rempate.setText("Rempate:        {}+".format(self.ptajeBarRempate.value()))
         else:
-            self.rempate.setText("Rempate:      {}".format(self.ptajeBarRempate.value()))
+            self.rempate.setText("Rempate:         {}".format(self.ptajeBarRempate.value()))
 
 
     def getActualEmpates(self): 
@@ -599,5 +599,5 @@ class Filters(QMainWindow):
     def openBrowser(self, item):
         if self.table.secondTable.column(item) == 0:
             webbrowser.open(
-                f"https://www.flashscore.com/match/{self.currentDatos[self.table.secondTable.row(item)][-1]}/#match-summary",
+                f"https://www.flashscore.com/match/{self.currentDatos[self.table.secondTable.row(item)][22]}/#match-summary",
                  new=2, autoraise=True)

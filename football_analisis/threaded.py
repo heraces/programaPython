@@ -108,7 +108,7 @@ class ChargeDatabase(QRunnable):
             maRalla.append(self.getDiffPtsHA(row))
 
             datos.append(maRalla)
-            if(len(datos) % 1000):
+            if(len(datos) % 5000):
                 self.signals.progress.emit(len(datos)/len(rows)*50 + 50)
 
         self.signals.data.emit([datos, minDate, maxDate, leagues])
@@ -216,5 +216,5 @@ class GetTeams(QRunnable):
     @pyqtSlot()
     def run(self):
         db = Database()
-        self.signals.data.emit(db.query("""SELECT ID_LEAGUE, LEAGUE_PLAYED, LEAGUE_DRAWS FROM FIXTURES GROUP BY ID_LEAGUE"""))
+        self.signals.data.emit(db.query("SELECT ID_LEAGUE, LEAGUE_PLAYED, LEAGUE_DRAWS FROM FIXTURES GROUP BY ID_LEAGUE"))
         del db

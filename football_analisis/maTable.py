@@ -86,12 +86,7 @@ class CustomTableWidget(QTableWidget):
             self.secondTable.setItem(fila, 2, QTableWidgetItem(str(row[2])))
             self.secondTable.setItem(fila, 3, QTableWidgetItem(str(row[3])))
             self.secondTable.setItem(fila, 4, QTableWidgetItem(str(row[4])))
-
-            self.setItem(fila, 0, QTableWidgetItem(str(row[0])))
-            self.setItem(fila, 1, QTableWidgetItem(str(row[1])))
-            self.setItem(fila, 2, QTableWidgetItem(str(row[2])))
-            self.setItem(fila, 3, QTableWidgetItem(str(row[3])))
-            self.setItem(fila, 4, QTableWidgetItem(str(row[4])))
+            
             self.setItem(fila, 5, QTableWidgetItem(str(row[5])))
             self.setItem(fila, 6, QTableWidgetItem(str(row[6])))
             self.setItem(fila, 7, QTableWidgetItem(str(row[7])))
