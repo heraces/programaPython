@@ -1,7 +1,7 @@
 from telethon.sync import TelegramClient
-
-from PyQt5.QtWidgets import (QTableWidget, QApplication, QMainWindow, QWidget, QComboBox, QLabel, QProgressBar,
-                             QVBoxLayout, QHBoxLayout, QInputDialog, QTableWidgetItem, QHeaderView, QMessageBox)
+from telethon.tl import functions
+from PyQt5.QtWidgets import (QTableWidget, QApplication, QMainWindow, QWidget, QComboBox, QLabel, QProgressBar, QLineEdit,
+                             QVBoxLayout, QHBoxLayout, QInputDialog, QTableWidgetItem, QHeaderView, QMessageBox,QPushButton)
 from PyQt5.QtCore import QSize, Qt
 
 import sys
@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
         self.init()#sets up the app view
 
         #creamos el cliente
-        self.client = TelegramClient('BetApuestas_Session', api_id, api_hash)
+        self.client = TelegramClient('MemberAnalisis_Session', api_id, api_hash)
         self.client.connect()
 
         #autentificamos
@@ -29,16 +29,15 @@ class MainWindow(QMainWindow):
                 self.client.sign_in(phone, text)
 
         #we get the channels
-        self.dic = {}
         self.groups = []
         for chat in self.client.iter_dialogs():
-            try:
-                if chat.is_channel:
+            if chat.is_channel:
+                try:
+                    aux = self.client.get_participants(chat, aggressive=True)
                     self.groups.append(chat)
-                    self.dic[chat.title] = False
                     self.channelList.addItem(chat.title)
-            except:
-                continue
+                except:
+                    continue
 
     def init(self):
         widget = QWidget()
@@ -52,8 +51,8 @@ class MainWindow(QMainWindow):
         self.channelList.currentIndexChanged.connect(self.changeChannel)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["alias", "first name", "last name", "phone number"])
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["alias", "first name", "last name", "phone number", "Eliminar"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.horizontalHeader().sectionClicked.connect(self.ordenar)
 
@@ -74,92 +73,88 @@ class MainWindow(QMainWindow):
     #cambiamos participantes y tal
     def changeChannel(self, index):
         if len(self.groups) > 0: 
-            #si no hemos guardado ese canal lo guardamos
-            if not self.dic[self.channelList.currentText()]:
-                target_group= self.groups[self.channelList.currentIndex()]
-                self.all_participants = self.client.get_participants(target_group, aggressive=True)
-                self.dic[self.channelList.currentText()] = True
-                self.save()
-
+            target_group= self.groups[self.channelList.currentIndex()]
+            self.all_participants = []
+            for user in self.client.get_participants(target_group, aggressive=True):
+                if not user.is_self:
+                    lista = []
+                    lista.append(user.id)
+                    lista.append(str(user.username))
+                    lista.append(str(user.first_name))
+                    lista.append(str(user.last_name))
+                    lista.append(str(user.phone))
+                    lista.append(user.contact)
+                    self.all_participants.append(lista)
+                          
             self.showTable()
 
         else:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Warning)
-            msg.setText("This account owns no channels")
-            msg.setWindowTitle("You have no channels")
+            msg.setText("This account is admin of no channels")
+            msg.setWindowTitle("No channels found")
             msg.exec_()
 
     #poblamos la tabla
     def showTable(self):
         self.table.clearContents()
-        name = self.channelList.currentText() + ".csv"
-        with open(name,"r",encoding='UTF-8') as f:
-            data = list(csv.reader(f,delimiter=";",lineterminator="\n"))
-            self.table.setRowCount(len(data))
-            self.progressbar.setValue(0)
-            self.progressbar.show()
-            fila = 0
-            for row in data:
-                self.table.setItem(fila, 0, QTableWidgetItem(str(row[0])))
-                self.table.setItem(fila, 1, QTableWidgetItem(str(row[1])))
-                self.table.setItem(fila, 2, QTableWidgetItem(str(row[2])))
-                self.table.setItem(fila, 3, QTableWidgetItem(str(row[3])))
+        self.buttonefective = []
+        self.table.setRowCount(len(self.all_participants))
+        self.progressbar.setValue(0)
+        self.progressbar.show()
+        fila = 0
+        for user in self.all_participants:
+            lista = []
+            #nombre
+            aux = QLineEdit(str(user[2]))
+            aux.setAlignment(Qt.AlignHCenter)
+            aux.setStyleSheet("QLineEdit, QLineEdit:focus { border: none; }")
+            aux.returnPressed.connect(self.changeName)
 
-                self.table.item(fila, 0).setTextAlignment(Qt.AlignHCenter)
-                self.table.item(fila, 1).setTextAlignment(Qt.AlignHCenter)
-                self.table.item(fila, 2).setTextAlignment(Qt.AlignHCenter)
-                self.table.item(fila, 3).setTextAlignment(Qt.AlignHCenter)
-                fila += 1
+            #last_name
+            aux2 = QLineEdit(str(user[3]))
+            aux2.setAlignment(Qt.AlignHCenter)
+            aux2.setStyleSheet("QLineEdit, QLineEdit:focus { border: none; }")
+            aux2.returnPressed.connect(self.changeLastName)
 
-                self.progressbar.setValue(int(fila/len(data) * 100))
+            lista.append(aux)
+            lista.append(aux2)
+            self.buttonefective.append(lista)
+            
+            button = QPushButton("Eliminar")
+            lista.append(button)
+            #button.clicked.connect(self.delete)
+            
+            self.table.setItem(fila, 0, QTableWidgetItem(str(user[1])))
+            self.table.setCellWidget(fila, 1, aux)
+            self.table.setCellWidget(fila, 2, aux2)
+            self.table.setItem(fila, 3, QTableWidgetItem(str(user[4])))
+            self.table.setCellWidget(fila, 4, button)
 
-            self.progressbar.hide()
-              
-    def save(self):
-        name = self.channelList.currentText() + ".csv"
-        with open(name,"w",encoding='UTF-8') as f:
-            writer = csv.writer(f,delimiter=";",lineterminator="\n")
-            for user in self.all_participants:
-                if not user.is_self:
-                    if user.username:
-                        username= user.username
-                    else:
-                        username= ""
-                    if user.first_name:
-                        first_name= user.first_name
-                    else:
-                        first_name= ""
-                    if user.last_name:
-                        last_name= user.last_name
-                    else:
-                        last_name= ""
-                    writer.writerow([username, first_name, last_name, user.phone])  
+            self.table.item(fila, 0).setTextAlignment(Qt.AlignHCenter)
+            self.table.item(fila, 3).setTextAlignment(Qt.AlignHCenter)
+
+            fila += 1
+
+            self.progressbar.setValue(int(fila/len(self.all_participants) * 100))
+
+        self.progressbar.hide()
 
     def ordenar(self, sortingColumn):
         if len(self.groups) > 0: 
             self.progressbar.setValue(0)
             self.progressbar.show()
-            arrangeList = []
-            name = self.channelList.currentText() + ".csv"
-            with open(name,"r",encoding='UTF-8') as f:
-                arrangeList.extend(list(csv.reader(f,delimiter=";",lineterminator="\n")))
-
+            sortingColumn += 1
             row = 0
-            for indice in range(len(arrangeList)-1, 0, -1):
+            for indice in range(len(self.all_participants)-1, 0, -1):
                 for sorting in range(indice):
-                    if arrangeList[sorting][sortingColumn] > arrangeList[indice][sortingColumn]:
-                        line = arrangeList[indice]
-                        arrangeList[indice] = arrangeList[sorting]
-                        arrangeList[sorting] = line
+                    if self.all_participants[sorting][sortingColumn] > self.all_participants[indice][sortingColumn]:
+                        line = self.all_participants[indice]
+                        self.all_participants[indice] = self.all_participants[sorting]
+                        self.all_participants[sorting] = line
 
-                self.progressbar.setValue(int(row/len(arrangeList) *100))
+                self.progressbar.setValue(int(row/len(self.all_participants) *100))
                 row += 1
-            
-            with open(name,"w",encoding='UTF-8') as f:
-                writer = csv.writer(f,delimiter=";",lineterminator="\n")
-                for item in arrangeList:
-                    writer.writerow(item)
 
             self.progressbar.hide()
             self.showTable()
@@ -168,6 +163,46 @@ class MainWindow(QMainWindow):
     def close(self):
         self.client.disconnect()
         super().close()
+
+    def changeLastName(self):
+        if self.all_participants[self.table.currentRow()][5]:
+            self.client(functions.contacts.DeleteContactsRequest( id=[self.all_participants[self.table.currentRow()][0]])) 
+
+        self.client(functions.contacts.AddContactRequest(
+                id=self.all_participants[self.table.currentRow()][0],
+                first_name=self.all_participants[self.table.currentRow()][2],
+                last_name=self.buttonefective[self.table.currentRow()][1].text(),
+                phone=self.table.item(self.table.currentRow(), 3).text(),
+                add_phone_privacy_exception=True
+        ))
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("You have changed the last name of the user")
+        msg.setWindowTitle("Information change")
+        msg.exec_()
+
+    def changeName(self):
+        if self.all_participants[self.table.currentRow()][5]:
+            self.client(functions.contacts.DeleteContactsRequest( id=[self.all_participants[self.table.currentRow()][0]])) 
+        self.client(functions.contacts.AddContactRequest(
+                id=self.all_participants[self.table.currentRow()][0],
+                first_name=self.buttonefective[self.table.currentRow()][0].text(),
+                last_name=self.all_participants[self.table.currentRow()][3],
+                phone=self.table.item(self.table.currentRow(), 3).text(),
+                add_phone_privacy_exception=True
+        ))
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("You have changed the first name of the user")
+        msg.setWindowTitle("Information change")
+        msg.exec_()
+
+    def delete(self):
+        self.client.kick_participant(self.groups[self.channelList.currentIndex()], self.all_participants[self.table.currentRow()])
+        target_group= self.groups[self.channelList.currentIndex()]
+        self.all_participants = self.client.get_participants(target_group, aggressive=True)
+        self.showTable()
+
 
 app = QApplication(sys.argv)
 window = MainWindow()

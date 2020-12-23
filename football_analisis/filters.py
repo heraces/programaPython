@@ -334,13 +334,13 @@ class Filters(QMainWindow):
                                  (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarTGPG.getBigerThanHandler()
                                  and (self.ptajeBarTGPG.getLessThanHandler() >= elemento[9] or self.ptajeBarTGPG.isMaxLessHandler())))):
                     isIn = False
-                elif not((self.ptajeBarPPGHome.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
-                                 (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarPPGHome.getBigerThanHandler()
-                                 and (self.ptajeBarPPGHome.getLessThanHandler() >= elemento[9] or self.ptajeBarPPGHome.isMaxLessHandler())))):
+                elif not((self.ptajeBarPPGHome.getBigerThanHandler() <= 0 and (isinstance(elemento[10], str))) or (
+                                 (isinstance(elemento[10], float) and elemento[10] >= self.ptajeBarPPGHome.getBigerThanHandler()
+                                 and (self.ptajeBarPPGHome.getLessThanHandler() >= elemento[10] or self.ptajeBarPPGHome.isMaxLessHandler())))):
                     isIn = False
-                elif not((self.ptajeBarPPGAway.getBigerThanHandler() <= 0 and (isinstance(elemento[9], str))) or (
-                                 (isinstance(elemento[9], float) and elemento[9] >= self.ptajeBarPPGAway.getBigerThanHandler()
-                                 and (self.ptajeBarPPGAway.getLessThanHandler() >= elemento[9] or self.ptajeBarPPGAway.isMaxLessHandler())))):
+                elif not((self.ptajeBarPPGAway.getBigerThanHandler() <= 0 and (isinstance(elemento[11], str))) or (
+                                 (isinstance(elemento[11], float) and elemento[11] >= self.ptajeBarPPGAway.getBigerThanHandler()
+                                 and (self.ptajeBarPPGAway.getLessThanHandler() >= elemento[11] or self.ptajeBarPPGAway.isMaxLessHandler())))):
                     isIn = False
                 elif not(self.ptajeBarPJHome.value() <= 0 or elemento[12] >= self.ptajeBarPJHome.value()):
                     isIn = False
@@ -548,7 +548,7 @@ class Filters(QMainWindow):
         self.usedLeagues.clear()
 
         self.startDate.setDate(self.startDate.minimumDate())
-        self.endDate.setDate(self.startDate.maximumDate())
+        self.endDate.setDate(self.endDate.maximumDate())
 
     def resizeEvent(self, event):#sobreescribimos el metodo
         self.printTheProgressBars()
